@@ -9,13 +9,9 @@
 
 #include "gpio.h"
 
-#define DIR_Pin   GPIO_PIN_10 //Direction pin to motor driver
-#define STEP_Pin  GPIO_PIN_11 //Step pin to motor driver
 /**
  * @brief Main process - calls multiple other processes to execute motor control loop
  */
-
-
 int main(void)
 {
   HAL_Init();
@@ -32,18 +28,6 @@ int main(void)
 
     HAL_Delay(200);
   }
-}
-
-void CW_rotation(void){
-  HAL_GPIO_WritePin(GPIOA, DIR_Pin, GPIO_PIN_SET);//Clock wise rotation (SET=CW,RESET=CCW)
-		//Moving stepper motor forward for 1 full rotation 
-		for(int i=1;i<=200;i++){  //200 steps of 1.8°
-			HAL_GPIO_WritePin(GPIOA, STEP_Pin, GPIO_PIN_SET);
-			HAL_Delay(50);
-			HAL_GPIO_WritePin(GPIOA, STEP_Pin, GPIO_PIN_RESET);
-			HAL_Delay(50);
-		}
-
 }
 
 void SysTick_Handler(void)
