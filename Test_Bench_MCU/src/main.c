@@ -30,13 +30,10 @@ int main(void)
   {
     HAL_GPIO_TogglePin(LED_GPIO_PORT, LED_PIN);
 
-    CW_rotation();
-    
-    HAL_Delay(2000);
+    HAL_Delay(200);
   }
 }
 
-//Completes 1 full rotation
 void CW_rotation(void){
   HAL_GPIO_WritePin(GPIOA, DIR_Pin, GPIO_PIN_SET);//Clock wise rotation (SET=CW,RESET=CCW)
 		//Moving stepper motor forward for 1 full rotation 
