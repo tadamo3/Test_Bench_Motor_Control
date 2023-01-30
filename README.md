@@ -11,7 +11,7 @@ The repo includes one main folder containing the CubeMX project configuration fi
 
 
 ## CubeMX project
-This section will present you the required steps to program the NUCLEO-F401RE board and integrate the CubeMX folder in VSCode.
+This section presents the required steps to program the NUCLEO-F401RE board and integrate the CubeMX folder in VSCode.
 
 - Open CubeMX and select **New Project** in the **File** tab.
 
@@ -28,7 +28,7 @@ This section will present you the required steps to program the NUCLEO-F401RE bo
 - You can then generate the code and confirm it has appeared in the right folder.
 
 ## PlatformIO project
-This section will present the setup for integrating a PlatformIO project in a CubeMX project folder.
+This section presents the setup for integrating a PlatformIO project in a CubeMX project folder.
 We will use the [stm32pio cross-platform app](https://github.com/ussserrr/stm32pio) as it is an easy-to-use tool.
 
 - To be able to use the stm32pio tool, you must first download the PlatformIO extension on Visual Studio Code as shown in [the following](https://platformio.org/install/ide?install=vscode) page.
