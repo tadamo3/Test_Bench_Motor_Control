@@ -32,12 +32,6 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-#ifndef __GNUC__
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -58,20 +52,6 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-/**
-* @brief Retargets the C library printf function to the USART.
-* @param None
-* @retval None
-*/
-
-PUTCHAR_PROTOTYPE
-{
-/* Place your implementation of fputc here */
-/* e.g. write a character to the USART2 and Loop until the end
-of transmission */
-HAL_UART_Transmit(&huart2, (uint8_t *)&ch, 1, 0xFFFF);
-return ch;
-}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -117,50 +97,17 @@ int main(void)
   MX_TIM24_Init();
   MX_USART2_UART_Init();
   MX_TIM2_Init();
+  
   /* USER CODE BEGIN 2 */
-	
-  int flag_accel = 0;
-  TIM2->ARR = 72000;
-	TIM2->CCR1 = (TIM2->ARR)/2;
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-	//int count = 0;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    if (TIM2->ARR<=72000)                       //if speed is 0, changes direction
-    {                      
-      flag_accel = 0;
-    } 
-    else if (TIM2->ARR >= 72000000)
-    {
-      HAL_GPIO_TogglePin(GPIOE, moteur_3_4_DIR_Pin);
-      //HAL_Delay(10);
-      flag_accel = 1;
-      //HAL_GPIO_TogglePin(GPIOB,10);
-    }
-
-    if (flag_accel == 1)
-    {
-      TIM2->ARR = 0.5*(TIM2->ARR);                    //frequency increases
-    } 
-    else 
-    {
-	    TIM2->ARR = 2*(TIM2->ARR);                    //frequency decreases
-    }
-
-    TIM2->CCR1 = (TIM2->ARR)/2;             //setting motor 1 duty cycle to 50%
-    HAL_Delay(5000);
-  
-		
-		
-		//char str[80];
-		//sprintf(str,"Amp = %i\n",TIM2->CCR1);
     
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
