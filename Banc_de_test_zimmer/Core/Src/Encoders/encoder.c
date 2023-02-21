@@ -23,6 +23,7 @@
 int32_t encoder_read_value(Encoder * encoder)
 {
     int32_t encoder_value = encoder->encoder_timer->CNT >> 2;
+    encoder_value = encoder_value + (encoder->encoder_id << 24);
 
     /* Update encoder values */
     encoder->encoder_past_value = encoder->encoder_current_value;

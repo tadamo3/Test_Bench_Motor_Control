@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -59,7 +60,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t rx_buffer[10];
+uint32_t tx_buffer[10];
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
+{
+    HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,8 +95,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
-  MX_USB_OTG_HS_USB_Init();
+  MX_DMA_Init();
   MX_ADC3_Init();
   MX_TIM1_Init();
   MX_TIM4_Init();
@@ -98,16 +103,32 @@ int main(void)
   MX_TIM23_Init();
   MX_TIM24_Init();
   MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
+  MX_USB_OTG_HS_USB_Init();
   MX_TIM2_Init();
+
   /* USER CODE BEGIN 2 */
+  /* TIMERS */
   /* Start the timer for Encoder 1 */
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 
+  /* DMA */
+  HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
+
+  /* STRUCTURES */
+  SerialDataIn serial_data_in = {
+    .buffer   = rx_buffer,
+    .id       = 0u,
+    .command  = 0u,
+    .data     = 0u
+  };
+
   Encoder encoder_1 = {
     .encoder_timer            = TIM1,
+    .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
     .encoder_current_value    = 0u,
     .encoder_past_value       = 0u,
-    .encoder_number_of_turns  = 0u,
+    .encoder_number_of_turns  = 0u
   };
   /* USER CODE END 2 */
 
@@ -115,12 +136,17 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    serial_data_parser(&serial_data_in);
+
     /* Transmit new encoder values to GUI */
     int32_t encoder_1_value = encoder_read_value(&encoder_1);
-    transmit_serial_data(&huart3, &encoder_1_value);
+    tx_buffer[0] = encoder_1_value;
+
+    serial_data_transmit(&huart3, tx_buffer);
 
     HAL_Delay(100);
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

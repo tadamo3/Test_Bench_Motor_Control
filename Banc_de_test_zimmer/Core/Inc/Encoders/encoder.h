@@ -23,6 +23,7 @@
 typedef struct Encoder
 {
     TIM_TypeDef * encoder_timer;
+    uint8_t encoder_id;
     int32_t encoder_current_value;
     int32_t encoder_past_value;
     uint32_t encoder_number_of_turns;

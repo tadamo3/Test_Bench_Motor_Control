@@ -12,21 +12,33 @@
 /* INCLUDES */
 #include "Serial_Communication/serial_com.h"
 
-/* CONSTANTS */
-#define SIZE_BUFFER_OUT 100
-
 /* FUNCTIONS */
 /**
  * @brief
  * Sends via the serial bus data to transmit to the GUI 
  * 
  * @param[in] uart_channel      UART channel to send the information through
- * @param[in] data_to_transmit  Pointer to the data to send to the GUI
+ * @param[in] data_to_transmit  Pointer to the transmit buffer to send to the GUI
  */
-void transmit_serial_data(UART_HandleTypeDef * uart_channel, void * data_to_transmit)
+void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_transmit)
 {
-    char serial_buffer_out[SIZE_BUFFER_OUT];
+    HAL_UART_Transmit(uart_channel, (uint8_t *)data_to_transmit, sizeof(data_to_transmit), 0xF);
+}
 
-    sprintf(serial_buffer_out, "%d\r\n", *(int32_t *)data_to_transmit);
-    HAL_UART_Transmit(uart_channel, (uint8_t *)serial_buffer_out, strlen(serial_buffer_out), 0xF);
+/**
+ * @brief
+ * Parses the serial input buffer data received from the GUI
+ * 
+ * @param[inout] serial_data_in Serial data structure to parse the serial input buffer
+ */
+void serial_data_parser(SerialDataIn * serial_data_in)
+{
+    serial_data_in->id = serial_data_in->buffer[INDEX_ID_BYTE];
+    serial_data_in->command = serial_data_in->buffer[INDEX_COMMAND_BYTE];
+    serial_data_in->data = (serial_data_in->buffer[INDEX_DATA_FIRST_BYTE] + (serial_data_in->buffer[INDEX_DATA_SECOND_BYTE] << 8));
+}
+
+void serial_data_dispatch(SerialDataIn * parsed_serial_data)
+{
+    
 }
