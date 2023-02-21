@@ -27,6 +27,9 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "Encoders/encoder.h"
+#include "Serial_Communication/serial_com.h"
+#include "Motor_Control/motor_control.h"
 
 /* USER CODE END Includes */
 
@@ -66,7 +69,6 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -97,16 +99,27 @@ int main(void)
   MX_TIM24_Init();
   MX_USART2_UART_Init();
   MX_TIM2_Init();
-  
   /* USER CODE BEGIN 2 */
+  /* Start the timer for Encoder 1 */
+  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 
+  Encoder encoder_1 = {
+    .encoder_timer            = TIM1,
+    .encoder_current_value    = 0u,
+    .encoder_past_value       = 0u,
+    .encoder_number_of_turns  = 0u,
+  };
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    
+    /* Transmit new encoder values to GUI */
+    int32_t encoder_1_value = encoder_read_value(&encoder_1);
+    transmit_serial_data(&huart3, &encoder_1_value);
+
+    HAL_Delay(100);
     /* USER CODE END WHILE */
     /* USER CODE BEGIN 3 */
   }
