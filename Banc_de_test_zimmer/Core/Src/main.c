@@ -123,6 +123,14 @@ int main(void)
     .data     = 0u
   };
 
+  Encoder encoder_1 = {
+    .encoder_timer            = TIM1,
+    .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
+    .encoder_current_value    = 0u,
+    .encoder_past_value       = 0u,
+    .encoder_number_of_turns  = 0u
+  };
+
   /* Initialize array of structures for encoders */
   Encoder encoder_array[NUMBER_MAX_ENCODERS];
   encoder_init(encoder_array);
