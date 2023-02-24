@@ -98,4 +98,11 @@ void motor_control_manual(int Direction, int STOP, float V, ControlMotor * motor
         HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
     }
 
+/* EXTERN VARIABLES */
+extern Encoder * encoder_array;
+
+/* FUNCTIONS */
+void motor_control_change_speed(uint8_t motor_id, uint16_t speed)
+{
+    
 }

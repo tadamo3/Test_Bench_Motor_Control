@@ -11,8 +11,29 @@
 
 /* INCLUDES */
 #include "Encoders/encoder.h"
+#include "Serial_Communication/serial_com.h"
 
 /* FUNCTIONS */
+/**
+ * @brief 
+ * Generates all encoder structures for main application
+ * 
+ * @param[out] encoder_array Array of encoder structures
+ */
+void encoder_init(Encoder * encoder_array)
+{
+    Encoder encoder_1 = {
+        .encoder_timer            = TIM1,
+        .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
+        .encoder_current_value    = 0u,
+        .encoder_past_value       = 0u,
+        .encoder_number_of_turns  = 0u
+    };
+
+    /* Fill the array of structures */
+    encoder_array[INDEX_ENCODER_1] = encoder_1;
+}
+
 /**
  * @brief
  * Reads the current value of the desired encoder. Updates past and current encoder values. 

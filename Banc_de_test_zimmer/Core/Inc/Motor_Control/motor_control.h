@@ -36,5 +36,9 @@ typedef struct
 
 /* FUNCTIONS PROTOTYPES */
 void motor_control(int Pd, int efinal, int ARRmax, ControlMotor * motor);
+#include "Encoders/encoder.h"
+
+/* FUNCTIONS PROTOTYPES */
+void motor_control_change_speed(uint8_t motor_id, uint16_t speed);
 
 #endif /* _MOTOR_CONTROL_H_ */

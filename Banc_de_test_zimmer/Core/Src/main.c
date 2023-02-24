@@ -123,23 +123,20 @@ int main(void)
     .data     = 0u
   };
 
-  Encoder encoder_1 = {
-    .encoder_timer            = TIM1,
-    .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
-    .encoder_current_value    = 0u,
-    .encoder_past_value       = 0u,
-    .encoder_number_of_turns  = 0u
-  };
+  /* Initialize array of structures for encoders */
+  Encoder encoder_array[NUMBER_MAX_ENCODERS];
+  encoder_init(encoder_array);
   /* USER CODE END 2 */
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
+    serial_data_dispatch(&serial_data_in);
 
     /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(&encoder_1);
+    int32_t encoder_1_value = encoder_read_value(&encoder_array[INDEX_ENCODER_1]);
     tx_buffer[0] = encoder_1_value;
 
     serial_data_transmit(&huart3, tx_buffer);
