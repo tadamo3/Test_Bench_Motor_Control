@@ -126,6 +126,8 @@ int main(void)
   /* Initialize array of structures for encoders */
   Encoder encoder_array[NUMBER_MAX_ENCODERS];
   encoder_init(encoder_array);
+
+  /* Insert motor array structure here */
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
