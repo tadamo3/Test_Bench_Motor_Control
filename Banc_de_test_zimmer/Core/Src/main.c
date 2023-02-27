@@ -123,19 +123,32 @@ int main(void)
     .data     = 0u
   };
 
-  Encoder encoder_1 = {
-    .encoder_timer            = TIM1,
-    .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
-    .encoder_current_value    = 0u,
-    .encoder_past_value       = 0u,
-    .encoder_number_of_turns  = 0u
-  };
-
   /* Initialize array of structures for encoders */
   Encoder encoder_array[NUMBER_MAX_ENCODERS];
   encoder_init(encoder_array);
+  
+  Motor motor_vertical_left = {
+    .motor_arr_value = 72000u,
+    .motor_position_mm = 0u,
+    .motor_position_error_mm = 0u,
+    .motor_error_integral = 0u,
+    .motor_htim = &htim2,
+    .motor_timer = TIM2,
+    .motor_timer_channel = TIM_CHANNEL_1,
+    .motor_timer_old_val_us = 0u,
+    .motor_timer_val_us = 0u,
+    .motor_direction = MOTOR_STATE_VERTICAL_DOWN,
+    .motor_pin_direction = moteur_3_4_DIR_Pin,
+    .motor_encoder = &encoder_array[INDEX_ENCODER_1],
+  };
 
+  bool is_stop_activated = true;
   /* Insert motor array structure here */
+  /*
+  HAL_TIM_PWM_Start(motor_vertical_left.motor_htim, motor_vertical_left.motor_timer_channel);
+  motor_vertical_left.motor_timer->ARR = 6 * 28000;
+  motor_vertical_left.motor_timer->CCR1 = motor_vertical_left.motor_timer->ARR / 2;
+  */
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -143,13 +156,17 @@ int main(void)
   {
     /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
-    serial_data_dispatch(&serial_data_in);
+    //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
+    motor_control_manual(serial_data_in.command, &is_stop_activated, &motor_vertical_left);
 
     /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(&encoder_array[INDEX_ENCODER_1]);
-    tx_buffer[0] = encoder_1_value;
+    int32_t encoder_1_value = encoder_read_value(motor_vertical_left.motor_encoder);
+    int32_t position_motor = motor_vertical_left.motor_position_mm;
+    tx_buffer[0] = position_motor;
 
     serial_data_transmit(&huart3, tx_buffer);
+
+    //motor_control(5.0f, 0.1, 28000, &motor_vertical_left);
 
     HAL_Delay(100);
     /* USER CODE END WHILE */
