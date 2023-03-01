@@ -10,26 +10,18 @@
  */
 
 /* INCLUDES */
-#include "Motor_Control/motor_control.h"
-#include "Serial_Communication/serial_com.h"
-#include "Encoders/encoder.c"
-#include "Encoders/encoder.h"
+#include "Motor_Control/motor.h"
 
 /* FUNCTIONS */
 /**
  * @brief 
  * Generates all motor structures for main application
  * 
- * @param[out] motor_array Array of motor structures
+ * @param[inout] motor_array  Array of motor structures
+ * @param[in] encoder_array   Array of encoder structures to link to specific motors
  */
-void motor_init(Motor * motor_array)
+void motor_init(Motor * motor_array, Encoder * encoder_array)
 {
-  // Initialisation of encoder 
-  Encoder encoder_array[NUMBER_MAX_ENCODERS];
-  encoder_init(encoder_array);
-
-  // Initialisation of the different motor structures
-
   Motor motor_vertical_left = {
     .motor_arr_value = 72000u,
     .motor_position_mm = 0u,
@@ -78,7 +70,7 @@ void motor_init(Motor * motor_array)
   };
 
     /* Fill the array of structures */
-    motor_array[0] = motor_vertical_left;
-    motor_array[1] = motor_vertical_right; 
-    motor_array[2] = motor_horizontal; 
+    motor_array[INDEX_MOTOR_VERTICAL_LEFT]  = motor_vertical_left;
+    motor_array[INDEX_MOTOR_VERTICAL_RIGHT] = motor_vertical_right; 
+    motor_array[INDEX_MOTOR_HORIZONTAL]     = motor_horizontal; 
 }

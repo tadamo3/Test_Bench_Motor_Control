@@ -16,7 +16,7 @@
 #include "stm32h723xx.h"
 
 /* CONSTANTS */
-#define NUMBER_MAX_ENCODERS 4
+#define NUMBER_OF_ENCODERS 4
 #define INDEX_ENCODER_1 0
 #define INDEX_ENCODER_2 1
 #define INDEX_ENCODER_3 2

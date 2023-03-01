@@ -39,6 +39,7 @@ void encoder_init(Encoder * encoder_array)
  * Reads the current value of the desired encoder. Updates past and current encoder values. 
  * 
  * @param[inout] encoder Current encoder structure
+ * 
  * @return int32_t Current value of the encoder
  */
 int32_t encoder_read_value(Encoder * encoder)

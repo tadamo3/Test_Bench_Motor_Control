@@ -63,6 +63,12 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 uint8_t rx_buffer[10];
 uint32_t tx_buffer[10];
+/**
+ * @brief
+ * Callback function called when receiving data from the GUI
+ * 
+ * @param huart The UART channel to read from on the STM32 
+ */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
 {
     HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
@@ -124,35 +130,14 @@ int main(void)
     .data     = 0u
   };
 
-  /* Initialize array of structures for encoders */
-  Encoder encoder_array[NUMBER_MAX_ENCODERS];
+  Encoder encoder_array[NUMBER_OF_ENCODERS];
   encoder_init(encoder_array);
-  
-  Motor motor_array[NUMBER_MOTOR];
-  motor_init(motor_array);
-  
-  Motor motor_vertical_left = {
-    .motor_arr_value = 72000u,
-    .motor_position_mm = 0u,
-    .motor_position_error_mm = 0u,
-    .motor_error_integral = 0u,
-    .motor_htim = &htim2,
-    .motor_timer = TIM2,
-    .motor_timer_channel = TIM_CHANNEL_1,
-    .motor_timer_old_val_us = 0u,
-    .motor_timer_val_us = 0u,
-    .motor_direction = MOTOR_STATE_VERTICAL_DOWN,
-    .motor_pin_direction = moteur_3_4_DIR_Pin,
-    .motor_encoder = &encoder_array[INDEX_ENCODER_1],
-  };
 
-  bool is_stop_activated = true;
-  /* Insert motor array structure here */
-  /*
-  HAL_TIM_PWM_Start(motor_vertical_left.motor_htim, motor_vertical_left.motor_timer_channel);
-  motor_vertical_left.motor_timer->ARR = 6 * 28000;
-  motor_vertical_left.motor_timer->CCR1 = motor_vertical_left.motor_timer->ARR / 2;
-  */
+  Motor motor_array[NUMBER_MOTOR];
+  motor_init(motor_array, encoder_array);
+
+  /* Global flags */
+  bool g_is_stop_activated = true;
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -161,17 +146,17 @@ int main(void)
     /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
     //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
-   // motor_control_manual(serial_data_in.command, &is_stop_activated, &motor_vertical_left);
-    TIM2->ARR = 4*28000; //comment rendre modulaire??
+
+    TIM2->ARR = 4*28000;
     TIM2->CCR1 = (TIM2->ARR)/2;
     HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-    
 
     /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(motor_vertical_left.motor_encoder) & 0x0000FFFF;
+    int32_t encoder_1_value = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
 
-    //motor_control(5.0f, 0.1, 28000, &motor_vertical_left);
-    motor_control(10.0f, 0.1f, 2*28000, &motor_vertical_left);
+    /* For now, choose between one of these 2 lines for manual control or position control */
+    // motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+    motor_control(10.0f, 0.1f, 2*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
 
     tx_buffer[0] = encoder_1_value;
     

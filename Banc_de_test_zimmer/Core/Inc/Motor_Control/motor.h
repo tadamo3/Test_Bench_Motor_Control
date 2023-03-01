@@ -18,12 +18,13 @@
 
 /* CONSTANTS */
 #define NUMBER_MOTOR 3
-
+#define INDEX_MOTOR_VERTICAL_LEFT 0
+#define INDEX_MOTOR_VERTICAL_RIGHT 1
+#define INDEX_MOTOR_HORIZONTAL 2
 
 /* STRUCTURES */
 
-
 /* FUNCTIONS PROTOTYPES */
-void motor_init(Motor * motor_array);
+void motor_init(Motor * motor_array, Encoder * encoder_array);
 
 #endif /* _MOTOR_H_ */

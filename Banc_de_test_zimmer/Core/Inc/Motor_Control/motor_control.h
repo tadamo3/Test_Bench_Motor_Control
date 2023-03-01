@@ -20,7 +20,7 @@
 #include "Serial_Communication/serial_com.h"
 
 /* CONSTANTS */
-#define MOTOR_COMPLETE_TURN_DISTANCE_MM 2
+#define MOTOR_COMPLETE_TURN_DISTANCE_MM 5
 
 /* ENUMS */
 /**
