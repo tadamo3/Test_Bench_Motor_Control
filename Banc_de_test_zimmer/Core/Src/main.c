@@ -161,18 +161,23 @@ int main(void)
     /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
     //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
-    motor_control_manual(serial_data_in.command, &is_stop_activated, &motor_vertical_left);
+   // motor_control_manual(serial_data_in.command, &is_stop_activated, &motor_vertical_left);
+    TIM2->ARR = 4*28000; //comment rendre modulaire??
+    TIM2->CCR1 = (TIM2->ARR)/2;
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    
 
     /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(motor_vertical_left.motor_encoder);
-    int32_t position_motor = motor_vertical_left.motor_position_mm;
-    tx_buffer[0] = position_motor;
-
-    serial_data_transmit(&huart3, tx_buffer);
+    int32_t encoder_1_value = encoder_read_value(motor_vertical_left.motor_encoder) & 0x0000FFFF;
 
     //motor_control(5.0f, 0.1, 28000, &motor_vertical_left);
+    motor_control(10.0f, 0.1f, 2*28000, &motor_vertical_left);
 
+    tx_buffer[0] = encoder_1_value;
+    
+    serial_data_transmit(&huart3, tx_buffer);
     HAL_Delay(100);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

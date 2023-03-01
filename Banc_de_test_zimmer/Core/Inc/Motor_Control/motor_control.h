@@ -47,7 +47,7 @@ enum motor_state
 typedef struct Motor
 {
     int32_t motor_arr_value;
-    int32_t motor_position_mm;
+    float motor_position_mm;
     int32_t motor_position_error_mm;
     int32_t motor_error_integral;
     TIM_HandleTypeDef * motor_htim;
@@ -61,7 +61,7 @@ typedef struct Motor
 } Motor;
 
 /* FUNCTIONS PROTOTYPES */
-void motor_control(float position_to_reach_mm, int error_final, int max_arr_value, Motor * motor);
+void motor_control(float position_to_reach_mm, float error_final, int max_arr_value, Motor * motor);
 void motor_control_change_speed(uint8_t motor_id, uint16_t speed, Motor * motor);
 void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor);
 

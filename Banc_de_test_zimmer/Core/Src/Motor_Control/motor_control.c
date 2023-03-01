@@ -15,56 +15,57 @@
 
 /*Microcontroler and driver properties*/
 int Fclock = 72000000;        //clock frequency
-int DP = 2;                   //distance per rotation
+int DP = 5;                   //distance per rotation
 int PULSE = 400;              //Pulse/revolution
 
 /* EXTERN VARIABLES */
 extern Motor motor_vertical_left;
 
 /* FUNCTIONS */
-void motor_control(float position_to_reach_mm, int error_final, int max_arr_value, Motor * motor)
+void motor_control(float position_to_reach_mm, float error_final, int max_arr_value, Motor * motor)
 {
     int KP = 1;
     int KI = 1;
     int KD = 1;
 
-    motor->motor_position_mm = encoder_read_value(motor->motor_encoder);
-    //motor->motor_position_error_mm = position_to_reach_mm - motor->motor_position_mm;
+    int32_t pos = encoder_read_value(motor->motor_encoder) & 0x0000FFFF;
+    motor->motor_position_mm = (float)pos;
+    motor->motor_position_mm = motor->motor_position_mm / (2048/5);
+    motor->motor_position_error_mm = position_to_reach_mm - motor->motor_position_mm;
     //float current_error = position_to_reach_mm - motor->motor_position_mm;
     
-    //float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
+    float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
 
-    float to_compare = (float)motor->motor_position_mm / 1024;
-    if (to_compare > position_to_reach_mm)
-    {
-        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
-    }
+    
 
     /* Loop until convergence of error values */
-    /*
-    while (current_error >= error_final)
+    
+    while (motor->motor_position_error_mm >= error_final)
     {
-        motor->motor_position_mm = (encoder_read_value(motor->motor_encoder) / ENCODER_FULL_TURN_SHIFT) * MOTOR_COMPLETE_TURN_DISTANCE_MM;
+        uint32_t pos = encoder_read_value(motor->motor_encoder) & 0xFFFFFFFF;
+        motor->motor_position_mm = (float)pos;
+        motor->motor_position_mm = motor->motor_position_mm / (2048/5);
         motor->motor_position_error_mm = position_to_reach_mm - motor->motor_position_mm;
 
         motor->motor_timer_val_us = __HAL_TIM_GET_COUNTER(motor->motor_htim) / 72;
-        motor->motor_error_integral = (motor->motor_error_integral + current_error) * time_difference_us;
-        float X = (KP * current_error) + (KI * motor->motor_error_integral) + (KD * ((current_error - motor->motor_position_error_mm) / time_difference_us));
+        motor->motor_error_integral = (motor->motor_error_integral + motor->motor_position_error_mm) * time_difference_us;
+        float X = (KP * motor->motor_position_error_mm) + (KI * motor->motor_error_integral) + (KD * ((motor->motor_position_error_mm - motor->motor_position_error_mm) / time_difference_us));
 
         if ((X < 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_UP))
         {
             motor->motor_direction = MOTOR_STATE_VERTICAL_DOWN;
+            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
         } 
         else if ((X > 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_DOWN))
         {
             motor->motor_direction = MOTOR_STATE_VERTICAL_UP;
+            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
         }
         else
         {
         }
-        HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
 
-        motor->motor_arr_value = ((motor->motor_direction * DP * (1 / PULSE) * Fclock) / X) - 1;
+        motor->motor_arr_value = (Fclock / X) - 1;
         
         if (motor->motor_arr_value < max_arr_value) 
         {
@@ -75,8 +76,16 @@ void motor_control(float position_to_reach_mm, int error_final, int max_arr_valu
         TIM2->ARR = motor->motor_arr_value; //comment rendre modulaire??
         TIM2->CCR1 = (TIM2->ARR)/2;
     }
-    */
+    
      //Stops PWM for motor X after convergence
+     
+    if (motor->motor_position_error_mm <= error_final)
+    {
+       HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+       HAL_Delay(10000);
+    }
+    
+
 } 
 
 void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor)
