@@ -31,6 +31,7 @@
 #include "Encoders/encoder.h"
 #include "Serial_Communication/serial_com.h"
 #include "Motor_Control/motor_control.h"
+#include "Motor_Control/motor.h"
 
 /* USER CODE END Includes */
 
@@ -126,6 +127,9 @@ int main(void)
   /* Initialize array of structures for encoders */
   Encoder encoder_array[NUMBER_MAX_ENCODERS];
   encoder_init(encoder_array);
+  
+  Motor motor_array[NUMBER_MOTOR];
+  motor_init(motor_array);
   
   Motor motor_vertical_left = {
     .motor_arr_value = 72000u,
