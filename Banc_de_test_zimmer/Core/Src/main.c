@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "adc.h"
+#include "dma.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -30,6 +31,7 @@
 #include "Encoders/encoder.h"
 #include "Serial_Communication/serial_com.h"
 #include "Motor_Control/motor_control.h"
+#include "Motor_Control/motor.h"
 
 /* USER CODE END Includes */
 
@@ -59,7 +61,18 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+uint8_t rx_buffer[10];
+uint32_t tx_buffer[10];
+/**
+ * @brief
+ * Callback function called when receiving data from the GUI
+ * 
+ * @param huart The UART channel to read from on the STM32 
+ */
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef * huart)
+{
+    HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
+}
 /* USER CODE END 0 */
 
 /**
@@ -89,8 +102,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART3_UART_Init();
-  MX_USB_OTG_HS_USB_Init();
+  MX_DMA_Init();
   MX_ADC3_Init();
   MX_TIM1_Init();
   MX_TIM4_Init();
@@ -98,29 +110,61 @@ int main(void)
   MX_TIM23_Init();
   MX_TIM24_Init();
   MX_USART2_UART_Init();
+  MX_USART3_UART_Init();
+  MX_USB_OTG_HS_USB_Init();
   MX_TIM2_Init();
+
   /* USER CODE BEGIN 2 */
+  /* TIMERS */
   /* Start the timer for Encoder 1 */
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 
-  Encoder encoder_1 = {
-    .encoder_timer            = TIM1,
-    .encoder_current_value    = 0u,
-    .encoder_past_value       = 0u,
-    .encoder_number_of_turns  = 0u,
+  /* DMA */
+  HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
+
+  /* STRUCTURES */
+  SerialDataIn serial_data_in = {
+    .buffer   = rx_buffer,
+    .id       = 0u,
+    .command  = 0u,
+    .data     = 0u
   };
+
+  Encoder encoder_array[NUMBER_OF_ENCODERS];
+  encoder_init(encoder_array);
+
+  Motor motor_array[NUMBER_MOTOR];
+  motor_init(motor_array, encoder_array);
+
+  /* Global flags */
+  bool g_is_stop_activated = true;
   /* USER CODE END 2 */
 
-  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(&encoder_1);
-    transmit_serial_data(&huart3, &encoder_1_value);
+    /* Read and dispatch commands coming from the GUI */
+    serial_data_parser(&serial_data_in);
+    //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
 
+    TIM2->ARR = 4*28000;
+    TIM2->CCR1 = (TIM2->ARR)/2;
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+
+    /* Transmit new encoder values to GUI */
+    int32_t encoder_1_value = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
+
+    /* For now, choose between one of these 2 lines for manual control or position control */
+    // motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+    motor_control(10.0f, 0.1f, 2*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+
+    tx_buffer[0] = encoder_1_value;
+    
+    serial_data_transmit(&huart3, tx_buffer);
     HAL_Delay(100);
+
     /* USER CODE END WHILE */
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

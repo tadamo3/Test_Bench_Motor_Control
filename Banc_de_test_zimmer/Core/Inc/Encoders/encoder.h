@@ -15,6 +15,14 @@
 #include <stdio.h>
 #include "stm32h723xx.h"
 
+/* CONSTANTS */
+#define NUMBER_OF_ENCODERS 4
+#define INDEX_ENCODER_1 0
+#define INDEX_ENCODER_2 1
+#define INDEX_ENCODER_3 2
+#define INDEX_ENCODER_4 3
+#define ENCODER_FULL_TURN_SHIFT 2048
+
 /* STRUCTURES */
 /**
  * @brief Structure to represent a stepper motor encoder
@@ -23,6 +31,7 @@
 typedef struct Encoder
 {
     TIM_TypeDef * encoder_timer;
+    uint8_t encoder_id;
     int32_t encoder_current_value;
     int32_t encoder_past_value;
     uint32_t encoder_number_of_turns;
@@ -30,5 +39,6 @@ typedef struct Encoder
 
 /* FUNCTIONS PROTOTYPES */
 int32_t encoder_read_value(Encoder * encoder);
+void encoder_init(Encoder * encoder_array);
 
 #endif /* _ENCODER_H_ */
