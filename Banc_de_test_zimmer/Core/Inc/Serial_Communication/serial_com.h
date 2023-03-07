@@ -23,14 +23,15 @@
 #define INDEX_COMMAND_BYTE      2
 #define INDEX_ID_BYTE           3
 
-#define MASK_ID 0xFF000000
-#define MASK_COMMAND 0x00FF0000
-#define MASK_DATA 0x0000FFFF
+#define MASK_MODE       0x80
+#define MASK_COMMAND    0x7F
+
 
 /* STRUCTURES */
 typedef struct SerialDataIn
 {
     uint8_t * buffer;
+    uint8_t mode;
     uint8_t id;
     uint8_t command;
     uint16_t data;
@@ -62,6 +63,13 @@ enum COMMANDS
     COMMAND_READ_ENCODER_HORIZONTAL     = 9,
     COMMAND_ENABLE_MANUAL_MODE          = 10,
     COMMAND_ENABLE_AUTOMATIC_MODE       = 11,
+};
+
+enum MODES
+{
+    //MODE_RESERVED           = 0,
+    MODE_MANUAL_CONTROL     = 0,
+    MODE_POSITION_CONTROL   = 1,
 };
 
 /* FUNCTIONS PROTOTYPES */

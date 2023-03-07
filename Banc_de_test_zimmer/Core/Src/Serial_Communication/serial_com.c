@@ -11,9 +11,6 @@
 
 /* INCLUDES */
 #include "Serial_Communication/serial_com.h"
-#include "Motor_Control/motor_control.h"
-
-void serial_data_dispatch(SerialDataIn * parsed_serial_data, Motor * motor);
 
 /* FUNCTIONS */
 /**
@@ -37,22 +34,7 @@ void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_
 void serial_data_parser(SerialDataIn * serial_data_in)
 {
     serial_data_in->id = serial_data_in->buffer[INDEX_ID_BYTE];
-    serial_data_in->command = serial_data_in->buffer[INDEX_COMMAND_BYTE];
+    serial_data_in->mode = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE;
+    serial_data_in->command = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_COMMAND;
     serial_data_in->data = (serial_data_in->buffer[INDEX_DATA_FIRST_BYTE] + (serial_data_in->buffer[INDEX_DATA_SECOND_BYTE] << 8));
-}
-
-void serial_data_dispatch(SerialDataIn * parsed_serial_data, Motor * motor)
-{
-    if (parsed_serial_data->command == COMMAND_MOTOR_VERTICAL_UP)
-    {
-       motor_control_manual(parsed_serial_data->command, 0, motor);
-    }
-    else if (parsed_serial_data->command == COMMAND_MOTOR_VERTICAL_DOWN)
-    {
-
-    }
-    else if (parsed_serial_data->command == COMMAND_MOTOR_VERTICAL_STOP)
-    {
-        
-    }
 }

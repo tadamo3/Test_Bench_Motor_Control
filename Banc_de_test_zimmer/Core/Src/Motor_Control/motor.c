@@ -24,7 +24,7 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
 {
   Motor motor_vertical_left = {
     .motor_arr_value = 72000u,
-    .motor_position_mm = 0u,
+    .motor_current_position = 0u,
     .motor_position_error_mm = 0u,
     .motor_error_integral = 0u,
     .motor_htim = &htim2,
@@ -40,7 +40,7 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
   Motor motor_vertical_right = {
     // check arguments (for now are the same as motor_vertical_left)
     .motor_arr_value = 72000u,
-    .motor_position_mm = 0u,
+    .motor_current_position = 0u,
     .motor_position_error_mm = 0u,
     .motor_error_integral = 0u,
     .motor_htim = &htim2,
@@ -56,7 +56,7 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
   Motor motor_horizontal = {
     // check arguments (for now are the same as motor_vertical_left)
     .motor_arr_value = 72000u,
-    .motor_position_mm = 0u,
+    .motor_current_position = 0u,
     .motor_position_error_mm = 0u,
     .motor_error_integral = 0u,
     .motor_htim = &htim2,

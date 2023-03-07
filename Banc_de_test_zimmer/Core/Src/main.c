@@ -125,6 +125,7 @@ int main(void)
   /* STRUCTURES */
   SerialDataIn serial_data_in = {
     .buffer   = rx_buffer,
+    .mode     = 0u,
     .id       = 0u,
     .command  = 0u,
     .data     = 0u
@@ -145,20 +146,22 @@ int main(void)
   {
     /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
-    //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
 
-    TIM2->ARR = 4*28000;
-    TIM2->CCR1 = (TIM2->ARR)/2;
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
+
+    /* Every loop cycle, verify  */
+    if (serial_data_in.mode == MODE_MANUAL_CONTROL)
+    {
+      motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+    }
+    else if (serial_data_in.mode == MODE_POSITION_CONTROL)
+    {
+      motor_control_position(10.0f, motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position, 0.1f, 4*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+    }
 
     /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
 
-    /* For now, choose between one of these 2 lines for manual control or position control */
-    // motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
-    motor_control(10.0f, 0.1f, 2*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
-
-    tx_buffer[0] = encoder_1_value;
+    tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
     
     serial_data_transmit(&huart3, tx_buffer);
     HAL_Delay(100);
