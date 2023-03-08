@@ -149,7 +149,6 @@ int main(void)
 
     motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
 
-    /* Every loop cycle, verify  */
     if (serial_data_in.mode == MODE_MANUAL_CONTROL)
     {
       motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
@@ -160,7 +159,6 @@ int main(void)
     }
 
     /* Transmit new encoder values to GUI */
-
     tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
     
     serial_data_transmit(&huart3, tx_buffer);

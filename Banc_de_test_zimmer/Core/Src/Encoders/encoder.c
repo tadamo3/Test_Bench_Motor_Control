@@ -53,3 +53,19 @@ int32_t encoder_read_value(Encoder * encoder)
 
     return encoder_value;
 }
+
+/**
+ * @brief 
+ * Converts an absolute encoder position in its mm equivalent
+ * 
+ * @param[in] encoder_position  The absolute position of the encoder
+ * 
+ * @return The converted encoder position in mm 
+ */
+float_t convert_encoder_position_to_mm(int32_t encoder_position)
+{
+    float_t position_mm = (float)encoder_position;
+    position_mm = position_mm / (2048/5);
+
+    return position_mm;
+}

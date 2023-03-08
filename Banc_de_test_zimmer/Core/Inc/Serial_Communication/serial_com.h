@@ -67,7 +67,6 @@ enum COMMANDS
 
 enum MODES
 {
-    //MODE_RESERVED           = 0,
     MODE_MANUAL_CONTROL     = 0,
     MODE_POSITION_CONTROL   = 1,
 };

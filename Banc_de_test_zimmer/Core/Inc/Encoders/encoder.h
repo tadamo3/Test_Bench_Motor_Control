@@ -13,6 +13,8 @@
 
 /* INCLUDES */
 #include <stdio.h>
+#include <float.h>
+#include <math.h>
 #include "stm32h723xx.h"
 
 /* CONSTANTS */
@@ -40,5 +42,6 @@ typedef struct Encoder
 /* FUNCTIONS PROTOTYPES */
 int32_t encoder_read_value(Encoder * encoder);
 void encoder_init(Encoder * encoder_array);
+float_t convert_encoder_position_to_mm(int32_t encoder_position);
 
 #endif /* _ENCODER_H_ */
