@@ -10,6 +10,8 @@
  */
 
 /* INCLUDES */
+#include <math.h>
+
 #include "Motor_Control/motor_control.h"
 #include "Serial_Communication/serial_com.h"
 #include "tim.h"
@@ -19,27 +21,26 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
 {
     int KP = 1;
     int KI = 1;
-    int KD = 1;
+    int KD = 0;
 
     float_t current_position_mm = convert_encoder_position_to_mm(current_position);
 
     /* Update position errors for adjustement of PID */
-    motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
     motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
     
     float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
 
     /* PID processing */
-    if (current_position_mm >= error_final)
+    if (fabs(motor->motor_current_position_error_mm) > error_final)
     {
         motor->motor_timer_val_us = __HAL_TIM_GET_COUNTER(motor->motor_htim) / 72;
         motor->motor_error_integral = (motor->motor_error_integral + motor->motor_current_position_error_mm) * time_difference_us;
 
-        float pid_non_converted_speed = (KP * motor->motor_current_position_error_mm) + 
-                                        (KI * motor->motor_error_integral) + 
-                                        (KD * ((motor->motor_current_position_error_mm - motor->motor_previous_position_error_mm) / time_difference_us));
+        float pid_non_converted_speed = (KP * motor->motor_current_position_error_mm) +
+                                        (KI * motor->motor_error_integral) +
+                                        (KD * ((motor->motor_current_position_error_mm - motor->motor_previous_position_error_mm) / (time_difference_us / 100000)));
 
-        verify_change_direction(pid_non_converted_speed, motor);
+        verify_change_direction(motor->motor_current_position_error_mm, motor);
 
         motor->motor_arr_value = (CLOCK_FREQUENCY / pid_non_converted_speed) - 1;
         if (motor->motor_arr_value < max_arr_value)
@@ -48,16 +49,23 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
         }
 
         motor->motor_timer_old_val_us = motor->motor_timer_val_us;
+
+        HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
         TIM2->ARR = motor->motor_arr_value;
         TIM2->CCR1 = (TIM2->ARR)/2;
     }
-    
-    /* Stop condition */
-    if (motor->motor_current_position_error_mm <= error_final)
+    else if (fabs(motor->motor_current_position_error_mm) <= error_final)
     {
-       HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
     }
+    else
+    {
+        /* Do nothing here */
+    }
+
+    motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
 }
+
 
 void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor)
 {
@@ -69,7 +77,7 @@ void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * m
             HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
         }
 
-        *is_stop_activated = false; 
+        *is_stop_activated = false;
     } 
     else if (direction == COMMAND_MOTOR_VERTICAL_DOWN)
     {
@@ -90,7 +98,7 @@ void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * m
         TIM2->CCR1 = (TIM2->ARR)/2;
         ----------------------------------------------*/
         HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
-        motor->motor_timer->ARR = 4 * 28000;
+        motor->motor_timer->ARR = 1 * 28000;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
 	}
     
@@ -109,15 +117,15 @@ void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * m
  * @param[in] pid_speed     The current PID speed   
  * @param[inout] motor      Current motor structure
  */
-void verify_change_direction(float_t pid_speed, Motor * motor)
+void verify_change_direction(float_t motor_position_error, Motor * motor)
 {
     /* Change directions if needed to reach desired position */
-    if ((pid_speed < 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_UP))
+    if ((motor_position_error < 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_UP))
     {
         motor->motor_direction = MOTOR_STATE_VERTICAL_DOWN;
         HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
     } 
-    else if ((pid_speed > 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_DOWN))
+    else if ((motor_position_error > 0) && (motor->motor_direction == MOTOR_STATE_VERTICAL_DOWN))
     {
         motor->motor_direction = MOTOR_STATE_VERTICAL_UP;
         HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);

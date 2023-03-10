@@ -34,12 +34,11 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer_old_val_us = 0u,
     .motor_timer_val_us = 0u,
     .motor_direction = MOTOR_STATE_VERTICAL_UP,
-    .motor_pin_direction = moteur_3_4_DIR_Pin,
-    .motor_encoder = &encoder_array[INDEX_ENCODER_1],
+    .motor_pin_direction = motor_vertical_left_right_dir_Pin,
+    .motor_encoder = &encoder_array[INDEX_ENCODER_VERTICAL_LEFT],
   };
 
   Motor motor_vertical_right = {
-    // check arguments (for now are the same as motor_vertical_left)
     .motor_arr_value = 72000u,
     .motor_current_position = 0u,
     .motor_current_position_error_mm = 0u,
@@ -51,8 +50,8 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer_old_val_us = 0u,
     .motor_timer_val_us = 0u,
     .motor_direction = MOTOR_STATE_VERTICAL_DOWN,
-    .motor_pin_direction = moteur_3_4_DIR_Pin,
-    .motor_encoder = &encoder_array[INDEX_ENCODER_1],
+    .motor_pin_direction = motor_vertical_left_right_dir_Pin,
+    .motor_encoder = &encoder_array[INDEX_ENCODER_VERTICAL_RIGHT],
   };
 
   Motor motor_horizontal = {
@@ -68,8 +67,8 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer_old_val_us = 0u,
     .motor_timer_val_us = 0u,
     .motor_direction = MOTOR_STATE_VERTICAL_DOWN,
-    .motor_pin_direction = moteur_3_4_DIR_Pin,
-    .motor_encoder = &encoder_array[INDEX_ENCODER_1],
+    .motor_pin_direction = motor_vertical_left_right_dir_Pin,
+    .motor_encoder = &encoder_array[INDEX_MOTOR_HORIZONTAL],
   };
 
     /* Fill the array of structures */
