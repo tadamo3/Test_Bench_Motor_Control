@@ -22,7 +22,10 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
     int KD = 1;
 
     float_t current_position_mm = convert_encoder_position_to_mm(current_position);
-    motor->motor_position_error_mm = position_to_reach_mm - current_position_mm;
+
+    /* Update position errors for adjustement of PID */
+    motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
+    motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
     
     float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
 
@@ -30,9 +33,11 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
     if (current_position_mm >= error_final)
     {
         motor->motor_timer_val_us = __HAL_TIM_GET_COUNTER(motor->motor_htim) / 72;
-        motor->motor_error_integral = (motor->motor_error_integral + motor->motor_position_error_mm) * time_difference_us;
+        motor->motor_error_integral = (motor->motor_error_integral + motor->motor_current_position_error_mm) * time_difference_us;
 
-        float pid_non_converted_speed = (KP * motor->motor_position_error_mm) + (KI * motor->motor_error_integral) + (KD * ((motor->motor_position_error_mm - motor->motor_position_error_mm) / time_difference_us));
+        float pid_non_converted_speed = (KP * motor->motor_current_position_error_mm) + 
+                                        (KI * motor->motor_error_integral) + 
+                                        (KD * ((motor->motor_current_position_error_mm - motor->motor_previous_position_error_mm) / time_difference_us));
 
         verify_change_direction(pid_non_converted_speed, motor);
 
@@ -43,12 +48,12 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
         }
 
         motor->motor_timer_old_val_us = motor->motor_timer_val_us;
-        TIM2->ARR = motor->motor_arr_value; //comment rendre modulaire??
+        TIM2->ARR = motor->motor_arr_value;
         TIM2->CCR1 = (TIM2->ARR)/2;
     }
     
     /* Stop condition */
-    if (motor->motor_position_error_mm <= error_final)
+    if (motor->motor_current_position_error_mm <= error_final)
     {
        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
     }

@@ -34,7 +34,13 @@ void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_
 void serial_data_parser(SerialDataIn * serial_data_in)
 {
     serial_data_in->id = serial_data_in->buffer[INDEX_ID_BYTE];
-    serial_data_in->mode = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE;
+
+    uint8_t temp_mode = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE;
+    if (temp_mode != 0)
+    {
+        serial_data_in->mode = temp_mode;
+    }
+
     serial_data_in->command = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_COMMAND;
     serial_data_in->data = (serial_data_in->buffer[INDEX_DATA_FIRST_BYTE] + (serial_data_in->buffer[INDEX_DATA_SECOND_BYTE] << 8));
 }

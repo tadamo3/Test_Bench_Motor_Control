@@ -50,7 +50,8 @@ typedef struct Motor
 {
     int32_t motor_arr_value;
     int32_t motor_current_position;
-    int32_t motor_position_error_mm;
+    float_t motor_current_position_error_mm;
+    float_t motor_previous_position_error_mm;
     int32_t motor_error_integral;
     TIM_HandleTypeDef * motor_htim;
     TIM_TypeDef * motor_timer;

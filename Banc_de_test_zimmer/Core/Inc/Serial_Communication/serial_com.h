@@ -23,8 +23,8 @@
 #define INDEX_COMMAND_BYTE      2
 #define INDEX_ID_BYTE           3
 
-#define MASK_MODE       0x80
-#define MASK_COMMAND    0x7F
+#define MASK_MODE       0xC0
+#define MASK_COMMAND    0x3F
 
 
 /* STRUCTURES */
@@ -67,8 +67,9 @@ enum COMMANDS
 
 enum MODES
 {
-    MODE_MANUAL_CONTROL     = 0,
-    MODE_POSITION_CONTROL   = 1,
+    MODE_RESERVED           = 0,
+    MODE_MANUAL_CONTROL     = 1,
+    MODE_POSITION_CONTROL   = 2,
 };
 
 /* FUNCTIONS PROTOTYPES */

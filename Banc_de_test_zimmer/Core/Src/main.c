@@ -118,6 +118,7 @@ int main(void)
   /* TIMERS */
   /* Start the timer for Encoder 1 */
   HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
 
   /* DMA */
   HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
@@ -139,6 +140,10 @@ int main(void)
 
   /* Global flags */
   bool g_is_stop_activated = true;
+
+
+  uint16_t counter = 0;
+
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN WHILE */
@@ -146,20 +151,25 @@ int main(void)
   {
     /* Read and dispatch commands coming from the GUI */
     serial_data_parser(&serial_data_in);
+    tx_buffer[0] = serial_data_in.mode;
 
+    /* Read all encoder and other sensor values */
     motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
 
     if (serial_data_in.mode == MODE_MANUAL_CONTROL)
     {
       motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+      //tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
     }
     else if (serial_data_in.mode == MODE_POSITION_CONTROL)
     {
-      motor_control_position(10.0f, motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position, 0.1f, 4*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+      //tx_buffer[0] = counter;
+      counter = counter + 1;
+      //motor_control_position(10.0f, motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position, 0.1f, 4*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
     }
 
     /* Transmit new encoder values to GUI */
-    tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
+    //tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
     
     serial_data_transmit(&huart3, tx_buffer);
     HAL_Delay(100);

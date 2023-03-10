@@ -23,7 +23,7 @@
 void encoder_init(Encoder * encoder_array)
 {
     Encoder encoder_1 = {
-        .encoder_timer            = TIM1,
+        .encoder_timer            = TIM8,
         .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
         .encoder_current_value    = 0u,
         .encoder_past_value       = 0u,
