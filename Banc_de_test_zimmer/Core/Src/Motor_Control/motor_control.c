@@ -21,7 +21,7 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
 {
     int KP = 1;
     int KI = 1;
-    int KD = 0;
+    int KD = 1;
 
     float_t current_position_mm = convert_encoder_position_to_mm(current_position);
 
@@ -98,7 +98,7 @@ void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * m
         TIM2->CCR1 = (TIM2->ARR)/2;
         ----------------------------------------------*/
         HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
-        motor->motor_timer->ARR = 1 * 28000;
+        motor->motor_timer->ARR = 2 * 28000;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
 	}
     

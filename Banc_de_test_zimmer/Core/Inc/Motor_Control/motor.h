@@ -49,7 +49,7 @@ enum motor_state
 typedef struct Motor
 {
     int32_t motor_arr_value;
-    int32_t motor_current_position;
+    uint32_t motor_current_position;
     float_t motor_current_position_error_mm;
     float_t motor_previous_position_error_mm;
     int32_t motor_error_integral;

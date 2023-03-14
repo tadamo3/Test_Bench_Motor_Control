@@ -24,5 +24,6 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
 void motor_control_change_speed(uint8_t motor_id, uint16_t speed, Motor * motor);
 void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor);
 void verify_change_direction(float_t pid_speed, Motor * motor);
+//void motor_control_reset(Motor * motor)
 
 #endif /* _MOTOR_CONTROL_H_ */

@@ -23,7 +23,7 @@
 void encoder_init(Encoder * encoder_array)
 {
     Encoder encoder_vertical_left = {
-        .encoder_timer            = TIM8,
+        .encoder_timer            = TIM5,
         .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
         .encoder_current_value    = 0u,
         .encoder_past_value       = 0u,
@@ -31,7 +31,7 @@ void encoder_init(Encoder * encoder_array)
     };
 
     Encoder encoder_vertical_right = {
-        .encoder_timer            = TIM1,
+        .encoder_timer            = TIM23,
         .encoder_id               = ID_ENCODER_VERTICAL_RIGHT,
         .encoder_current_value    = 0u,
         .encoder_past_value       = 0u,
@@ -62,9 +62,8 @@ void encoder_init(Encoder * encoder_array)
  */
 uint32_t encoder_read_value(Encoder * encoder)
 {
-    int32_t encoder_value = encoder->encoder_timer->CNT >> 2;
-
-    encoder_value = encoder_value + (encoder->encoder_id << 24);
+    uint32_t encoder_value = encoder->encoder_timer->CNT >> 1;
+    //encoder_value = encoder_value + (encoder->encoder_id << 24);
 
     /* Update encoder values */
     encoder->encoder_past_value = encoder->encoder_current_value;
@@ -84,7 +83,7 @@ uint32_t encoder_read_value(Encoder * encoder)
 float_t convert_encoder_position_to_mm(int32_t encoder_position)
 {
     float_t position_mm = (float)encoder_position;
-    position_mm = position_mm / (2048 / 5);
+    position_mm = position_mm / (2655 / 5);
 
     return position_mm;
 }

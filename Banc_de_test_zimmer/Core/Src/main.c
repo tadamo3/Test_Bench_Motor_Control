@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -119,8 +118,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC3_Init();
-  MX_TIM1_Init();
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_TIM23_Init();
@@ -129,15 +126,16 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_HS_USB_Init();
   MX_TIM2_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   /* TIMERS */
   /* Start the timer for Encoder 1 */
-  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
 
   /* Start the timer for Encoder 2 */
-  HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_ALL);
-  HAL_TIM_IC_Start_IT(&htim8, TIM_CHANNEL_3);
+  HAL_TIM_Encoder_Start(&htim23, TIM_CHANNEL_ALL);
+  HAL_TIM_IC_Start_IT(&htim23, TIM_CHANNEL_3);
 
   /* DMA */
   HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
@@ -170,7 +168,7 @@ int main(void)
     serial_data_parser(&serial_data_in);
 
     /* Read all encoder and other sensor values */
-    motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
+    motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder);
 
     if (serial_data_in.mode == MODE_MANUAL_CONTROL)
     {
@@ -178,13 +176,13 @@ int main(void)
     }
     else if (serial_data_in.mode == MODE_POSITION_CONTROL)
     {
-      motor_control_position(10.0f, motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position, 0.5f, 4*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
+      motor_control_position(340.0f, motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position, 0.5f, 4*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
     }
 
     /* Transmit new encoder values to GUI */
-    tx_buffer[0] = counter_turns;
+    tx_buffer[0] = motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_current_position;
     serial_data_transmit(&huart3, tx_buffer);
-    HAL_Delay(100);
+    HAL_Delay(10);
 
     /* USER CODE END WHILE */
 
@@ -211,10 +209,6 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-
-  /** Macro to configure the PLL clock source
-  */
-  __HAL_RCC_PLL_PLLSOURCE_CONFIG(RCC_PLLSOURCE_HSE);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
