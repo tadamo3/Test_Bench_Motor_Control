@@ -12,21 +12,63 @@
 /* INCLUDES */
 #include <math.h>
 
-#include "Motor_Control/motor_control.h"
-#include "Serial_Communication/serial_com.h"
 #include "tim.h"
+#include "Motor_Control/motor_control.h"
+
+/* Global flags */
+bool g_is_stop_activated = true;
 
 /* FUNCTIONS */
-void motor_control_position(float position_to_reach_mm, int32_t current_position, float error_final, int max_arr_value, Motor * motor)
+static inline uint8_t verify_motor_id(SerialDataIn * serial_data_in)
 {
-    int KP = 1;
-    int KI = 1;
+    uint8_t is_motor_id_valid = MOTOR_FAULT_INVALID_ID;
+    if (serial_data_in->id >= OFFSET_INDEX_MOTOR_ARRAY)
+    {
+        is_motor_id_valid = MOTOR_FAULT_NONE;
+    }
+
+    return is_motor_id_valid;
+}
+
+void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * serial_data_out, Motor * motor_array)
+{
+    /* Set reference states and faults */
+    uint8_t motor_index_to_control = ID_RESERVED;
+    uint8_t motor_status_movement = MOTOR_STATE_RESERVED;
+
+    uint8_t motor_status_component = verify_motor_id(serial_data_in);
+    if (motor_status_component == MOTOR_FAULT_NONE)
+    {
+        motor_index_to_control = serial_data_in->id - OFFSET_INDEX_MOTOR_ARRAY;
+
+        if (serial_data_in->mode == MODE_MANUAL_CONTROL)
+        {
+            motor_status_movement = motor_control_manual(serial_data_in->command, &g_is_stop_activated, &motor_array[motor_index_to_control]);
+        }
+        else if (serial_data_in->mode == MODE_POSITION_CONTROL)
+        {
+            motor_status_movement = motor_control_position((float_t)serial_data_in->data, motor_array[motor_index_to_control].motor_current_position, 0.25f, 4*28000, &motor_array[motor_index_to_control]);
+        }
+        else
+        {
+            /* Nothing to do here */
+        }
+    }
+
+    serial_build_message(serial_data_in->id, motor_status_component, motor_status_movement, motor_array[motor_index_to_control].motor_current_position, serial_data_out);
+}
+
+uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_position, float error_final, int max_arr_value, Motor * motor)
+{
+    int KP = 10;
+    int KI = 5;
     int KD = 1;
 
     float_t current_position_mm = convert_encoder_position_to_mm(current_position);
+    uint8_t motor_status_movement = MOTOR_STATE_RESERVED;
 
     /* Update position errors for adjustement of PID */
-    motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
+    motor->motor_current_position_error_mm = position_to_reach_mm - (current_position_mm + 0.5);
     
     float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
 
@@ -51,63 +93,27 @@ void motor_control_position(float position_to_reach_mm, int32_t current_position
         motor->motor_timer_old_val_us = motor->motor_timer_val_us;
 
         HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
-        TIM2->ARR = motor->motor_arr_value;
-        TIM2->CCR1 = (TIM2->ARR)/2;
+        motor->motor_timer->ARR = motor->motor_arr_value;
+        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+
+        motor_status_movement = MOTOR_STATE_AUTO_IN_TRAJ;
     }
     else if (fabs(motor->motor_current_position_error_mm) <= error_final)
     {
-        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+        //HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
+        motor->motor_timer->ARR = 69000000;
+        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+        motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
     }
     else
     {
         /* Do nothing here */
     }
 
+    /* Update previous error to keep track of progression of trajectory */
     motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
-}
 
-
-void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor)
-{
-    if (direction == COMMAND_MOTOR_VERTICAL_UP)
-    {
-        if (motor->motor_direction == MOTOR_STATE_VERTICAL_DOWN)
-        {
-            motor->motor_direction = MOTOR_STATE_VERTICAL_UP;
-            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
-        }
-
-        *is_stop_activated = false;
-    } 
-    else if (direction == COMMAND_MOTOR_VERTICAL_DOWN)
-    {
-        if (motor->motor_direction == MOTOR_STATE_VERTICAL_UP)
-        {
-            motor->motor_direction = MOTOR_STATE_VERTICAL_DOWN;
-            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
-        }
-
-        *is_stop_activated = false;
-    }
-
-    if ((!(TIM2->CR1 & TIM_CR1_CEN)) && (*is_stop_activated == false)) //Checks if PWM is NOT started
-    {
-        /*----------------------------------------------
-		HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-        TIM2->ARR = (CLOCK_FREQUENCY * DP / (speed * PULSE)) - 1;
-        TIM2->CCR1 = (TIM2->ARR)/2;
-        ----------------------------------------------*/
-        HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
-        motor->motor_timer->ARR = 2 * 28000;
-        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-	}
-    
-    //Add end trajectory sensor condition
-    if (direction == COMMAND_MOTOR_VERTICAL_STOP)
-    {
-        *is_stop_activated = true;
-        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
-    }
+    return motor_status_movement;
 }
 
 /**
@@ -134,6 +140,50 @@ void verify_change_direction(float_t motor_position_error, Motor * motor)
     {
         /* Do nothing here */
     }
+}
+
+uint8_t motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor)
+{
+    if (direction == COMMAND_MOTOR_VERTICAL_UP)
+    {
+        if (motor->motor_direction == MOTOR_STATE_VERTICAL_DOWN)
+        {
+            motor->motor_direction = MOTOR_STATE_VERTICAL_UP;
+            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
+        }
+
+        *is_stop_activated = false;
+    } 
+    else if (direction == COMMAND_MOTOR_VERTICAL_DOWN)
+    {
+        if (motor->motor_direction == MOTOR_STATE_VERTICAL_UP)
+        {
+            motor->motor_direction = MOTOR_STATE_VERTICAL_DOWN;
+            HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
+        }
+
+        *is_stop_activated = false;
+    }
+    else
+    {
+        /* Nothing to do here */
+    }
+
+    if ((!(TIM2->CR1 & TIM_CR1_CEN)) && (*is_stop_activated == false)) //Checks if PWM is NOT started
+    {
+        HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
+        motor->motor_timer->ARR = 4 * 28000;
+        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+	}
+    
+    //Add end trajectory sensor condition
+    if (direction == COMMAND_MOTOR_VERTICAL_STOP)
+    {
+        *is_stop_activated = true;
+        HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
+    }
+
+    return motor->motor_direction;
 }
 
 void motor_control_change_speed(uint8_t motor_id, uint16_t speed, Motor * motor)

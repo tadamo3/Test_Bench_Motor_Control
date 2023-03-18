@@ -83,7 +83,7 @@ uint32_t encoder_read_value(Encoder * encoder)
 float_t convert_encoder_position_to_mm(int32_t encoder_position)
 {
     float_t position_mm = (float)encoder_position;
-    position_mm = position_mm / (2655 / 5);
+    position_mm = position_mm / (2609 / 5);
 
     return position_mm;
 }

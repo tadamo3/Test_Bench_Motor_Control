@@ -18,6 +18,8 @@
 #include "gpio.h"
 #include "tim.h"
 #include "Encoders/encoder.h"
+#include "Serial_Communication/serial_com.h"
+
 
 /* CONSTANTS */
 #define NUMBER_MOTOR 3
@@ -31,7 +33,6 @@
  */
 enum motor_state
 {
-    MOTOR_STATE_FAULT = -1,
     MOTOR_STATE_RESERVED = 0,
     MOTOR_STATE_VERTICAL_UP = 1,
     MOTOR_STATE_VERTICAL_DOWN = 2,
@@ -39,6 +40,14 @@ enum motor_state
     MOTOR_STATE_HORIZONTAL_LEFT = 4,
     MOTOR_STATE_VERTICAL_STOP = 5,
     MOTOR_STATE_HORIZONTAL_STOP = 6,
+    MOTOR_STATE_AUTO_IN_TRAJ = 7,
+    MOTOR_STATE_AUTO_END_OF_TRAJ = 8,
+};
+
+enum motor_fault
+{
+    MOTOR_FAULT_NONE = 0,
+    MOTOR_FAULT_INVALID_ID = 1,
 };
 
 /* STRUCTURES */
@@ -48,6 +57,7 @@ enum motor_state
  */
 typedef struct Motor
 {
+    uint8_t motor_id;
     int32_t motor_arr_value;
     uint32_t motor_current_position;
     float_t motor_current_position_error_mm;

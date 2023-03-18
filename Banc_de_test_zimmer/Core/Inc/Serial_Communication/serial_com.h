@@ -37,6 +37,14 @@ typedef struct SerialDataIn
     uint16_t data;
 } SerialDataIn;
 
+typedef struct SerialDataOut
+{
+    uint32_t * buffer;
+    uint32_t message_to_send;
+    UART_HandleTypeDef * uart_channel;
+    size_t size_buffer;
+} SerialDataOut;
+
 /* ENUMS */
 enum ID
 {
@@ -61,8 +69,6 @@ enum COMMANDS
     COMMAND_READ_ENCODER_VERTICAL_LEFT  = 7,
     COMMAND_READ_ENCODER_VERTICAL_RIGHT = 8,
     COMMAND_READ_ENCODER_HORIZONTAL     = 9,
-    COMMAND_ENABLE_MANUAL_MODE          = 10,
-    COMMAND_ENABLE_AUTOMATIC_MODE       = 11,
 };
 
 enum MODES
@@ -74,7 +80,8 @@ enum MODES
 };
 
 /* FUNCTIONS PROTOTYPES */
-void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_transmit);
+void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_transmit, size_t size);
 void serial_data_parser(SerialDataIn * serial_data_in);
+void serial_build_message(uint8_t motor_id, uint8_t status_motor, uint8_t status_movement_motor, uint32_t position, SerialDataOut * serial_data_out);
 
 #endif /* _SERIAL_COM_H_ */
