@@ -62,7 +62,7 @@ void encoder_init(Encoder * encoder_array)
  */
 uint32_t encoder_read_value(Encoder * encoder)
 {
-    uint32_t encoder_value = encoder->encoder_timer->CNT >> 1;
+    uint32_t encoder_value = encoder->encoder_timer->CNT >> 2;
     //encoder_value = encoder_value + (encoder->encoder_id << 24);
 
     /* Update encoder values */
@@ -83,7 +83,7 @@ uint32_t encoder_read_value(Encoder * encoder)
 float_t convert_encoder_position_to_mm(int32_t encoder_position)
 {
     float_t position_mm = (float)encoder_position;
-    position_mm = position_mm / (2609 / 5);
+    position_mm = position_mm / (1305 / 5);
 
     return position_mm;
 }

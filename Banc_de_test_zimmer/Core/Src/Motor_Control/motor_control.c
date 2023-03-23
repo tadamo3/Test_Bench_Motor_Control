@@ -60,49 +60,41 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
 
 uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_position, float error_final, int max_arr_value, Motor * motor)
 {
-    int KP = 10;
-    int KI = 5;
-    int KD = 1;
-
     float_t current_position_mm = convert_encoder_position_to_mm(current_position);
     uint8_t motor_status_movement = MOTOR_STATE_RESERVED;
 
     /* Update position errors for adjustement of PID */
-    motor->motor_current_position_error_mm = position_to_reach_mm - (current_position_mm + 0.5);
-    
-    float time_difference_us = motor->motor_timer_val_us - motor->motor_timer_old_val_us;
+    motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
 
     /* PID processing */
     if (fabs(motor->motor_current_position_error_mm) > error_final)
     {
-        motor->motor_timer_val_us = __HAL_TIM_GET_COUNTER(motor->motor_htim) / 72;
-        motor->motor_error_integral = (motor->motor_error_integral + motor->motor_current_position_error_mm) * time_difference_us;
-
-        float pid_non_converted_speed = (KP * motor->motor_current_position_error_mm) +
-                                        (KI * motor->motor_error_integral) +
-                                        (KD * ((motor->motor_current_position_error_mm - motor->motor_previous_position_error_mm) / (time_difference_us / 100000)));
-
         verify_change_direction(motor->motor_current_position_error_mm, motor);
 
-        motor->motor_arr_value = (CLOCK_FREQUENCY / pid_non_converted_speed) - 1;
-        if (motor->motor_arr_value < max_arr_value)
+        motor->motor_arr_value = max_arr_value;
+        
+        HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
+        if (fabs(motor->motor_current_position_error_mm) > 27.0 || fabs(motor->motor_current_position_error_mm) < 3.0)
         {
-            motor->motor_arr_value = max_arr_value;
+            motor->motor_timer->ARR = motor->motor_arr_value * 2;
+        }
+        else if (fabs(motor->motor_current_position_error_mm) > 28.0 || fabs(motor->motor_current_position_error_mm) < 2.0)
+        {
+            motor->motor_timer->ARR = motor->motor_arr_value * 4;
+        }
+        else
+        {
+            motor->motor_timer->ARR = motor->motor_arr_value;
         }
 
-        motor->motor_timer_old_val_us = motor->motor_timer_val_us;
-
-        HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
-        motor->motor_timer->ARR = motor->motor_arr_value;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+        motor->motor_timer_old_val_us = motor->motor_timer_val_us;
 
         motor_status_movement = MOTOR_STATE_AUTO_IN_TRAJ;
     }
     else if (fabs(motor->motor_current_position_error_mm) <= error_final)
     {
-        //HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
-        motor->motor_timer->ARR = 69000000;
-        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+        HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
         motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
     }
     else

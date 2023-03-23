@@ -121,7 +121,6 @@ int main(void)
 
   /* Start the timer for Encoder 2 */
   HAL_TIM_Encoder_Start(&htim23, TIM_CHANNEL_ALL);
-  HAL_TIM_IC_Start_IT(&htim23, TIM_CHANNEL_3);
 
   /* DMA */
   HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
@@ -165,7 +164,21 @@ int main(void)
 
     motor_control_dispatch(&serial_data_in, &serial_data_out, motor_array);
 
-    HAL_Delay(50);
+    /*
+    HAL_TIM_PWM_Start(motor_array[0].motor_htim, motor_array[0].motor_timer_channel);
+    motor_array[0].motor_timer->ARR = 4*28000;
+    motor_array[0].motor_timer->CCR1 = motor_array[0].motor_timer->ARR / 2;
+
+    for (int i = 0; i < 2000; i++)
+    {
+      HAL_Delay(1);
+    }
+
+    HAL_TIM_PWM_Stop(motor_array[0].motor_htim, motor_array[0].motor_timer_channel);
+    HAL_GPIO_TogglePin(GPIOE, motor_array[0].motor_pin_direction);
+    */
+
+    HAL_Delay(100);
 
     /* USER CODE END WHILE */
 
