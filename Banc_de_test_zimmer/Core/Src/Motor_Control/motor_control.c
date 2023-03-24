@@ -46,7 +46,7 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
             motor_status_movement = motor_control_manual(serial_data_in->command, &g_is_stop_activated, &motor_array[motor_index_to_control]);
         }
         else if (serial_data_in->mode == MODE_POSITION_CONTROL)
-        {
+        {   
             motor_status_movement = motor_control_position((float_t)serial_data_in->data, motor_array[motor_index_to_control].motor_current_position, 0.25f, 4*28000, &motor_array[motor_index_to_control]);
         }
         else
@@ -65,9 +65,25 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
 
     /* Update position errors for adjustement of PID */
     motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
+    float_t speed_mm_s = (1/PULSE) * CLOCK_FREQUENCY * DISTANCE_PER_REVOLUTION_MM / (1 + max_arr_value);
+   // float_t run_time_ms = (position_to_reach_mm - current_position_mm) / speed_mm_s;
+    float_t run_time_ms = 1000*(30 - 10) / speed_mm_s;
+
+    HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
+    motor->motor_arr_value = max_arr_value;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    
+    motor_status_movement = MOTOR_STATE_AUTO_IN_TRAJ;
+    HAL_Delay((int)run_time_ms);
+
+
+    HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
+    motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
+    HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
 
     /* PID processing */
-    if (fabs(motor->motor_current_position_error_mm) > error_final)
+    
+   /* if (fabs(motor->motor_current_position_error_mm) > error_final)
     {
         verify_change_direction(motor->motor_current_position_error_mm, motor);
 
@@ -99,11 +115,14 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
     }
     else
     {
-        /* Do nothing here */
-    }
+        // Do nothing here 
+    }    
+    */   
+    
+    
 
     /* Update previous error to keep track of progression of trajectory */
-    motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
+    //motor->motor_previous_position_error_mm = motor->motor_current_position_error_mm;
 
     return motor_status_movement;
 }

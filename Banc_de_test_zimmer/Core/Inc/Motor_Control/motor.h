@@ -71,6 +71,7 @@ typedef struct Motor
     int32_t motor_direction;
     uint16_t motor_pin_direction;
     Encoder * motor_encoder;
+    float_t motor_displacement_time_ms;
 } Motor;
 
 /* FUNCTIONS PROTOTYPES */
