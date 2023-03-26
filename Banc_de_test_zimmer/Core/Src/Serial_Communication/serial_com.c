@@ -44,7 +44,7 @@ void serial_data_parser(SerialDataIn * serial_data_in)
 {
     serial_data_in->id = serial_data_in->buffer[INDEX_ID_BYTE];
 
-    uint8_t temp_mode = (serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE) >> 6;
+    uint8_t temp_mode = (serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE) >> 5;
     if (temp_mode != MODE_RESERVED)
     {
         serial_data_in->mode = temp_mode;

@@ -27,27 +27,32 @@
 #define INDEX_MOTOR_VERTICAL_RIGHT 1
 #define INDEX_MOTOR_HORIZONTAL 2
 
+#define MINIMUM_MOTOR_SPEED 65000
+#define MAXIMUM_MOTOR_SPEED 20000
+#define INTERVAL_SPEED 450
+
 /**
  * @brief Enum to represent any motors state
  * 
  */
 enum motor_state
 {
-    MOTOR_STATE_RESERVED = 0,
-    MOTOR_STATE_VERTICAL_UP = 1,
-    MOTOR_STATE_VERTICAL_DOWN = 2,
-    MOTOR_STATE_HORIZONTAL_RIGHT = 3,
-    MOTOR_STATE_HORIZONTAL_LEFT = 4,
-    MOTOR_STATE_VERTICAL_STOP = 5,
-    MOTOR_STATE_HORIZONTAL_STOP = 6,
-    MOTOR_STATE_AUTO_IN_TRAJ = 7,
-    MOTOR_STATE_AUTO_END_OF_TRAJ = 8,
+    MOTOR_STATE_RESERVED            = 0,
+    MOTOR_STATE_VERTICAL_UP         = 1,
+    MOTOR_STATE_VERTICAL_DOWN       = 2,
+    MOTOR_STATE_HORIZONTAL_RIGHT    = 3,
+    MOTOR_STATE_HORIZONTAL_LEFT     = 4,
+    MOTOR_STATE_VERTICAL_STOP       = 5,
+    MOTOR_STATE_HORIZONTAL_STOP     = 6,
+    MOTOR_STATE_AUTO_IN_TRAJ        = 7,
+    MOTOR_STATE_AUTO_END_OF_TRAJ    = 8,
+    MOTOR_STATE_CHANGE_PARAMS       = 9,
 };
 
 enum motor_fault
 {
-    MOTOR_FAULT_NONE = 0,
-    MOTOR_FAULT_INVALID_ID = 1,
+    MOTOR_FAULT_NONE        = 0,
+    MOTOR_FAULT_INVALID_ID  = 1,
 };
 
 /* STRUCTURES */
@@ -58,20 +63,14 @@ enum motor_fault
 typedef struct Motor
 {
     uint8_t motor_id;
-    int32_t motor_arr_value;
     uint32_t motor_current_position;
-    float_t motor_current_position_error_mm;
-    float_t motor_previous_position_error_mm;
-    int32_t motor_error_integral;
     TIM_HandleTypeDef * motor_htim;
     TIM_TypeDef * motor_timer;
     uint16_t motor_timer_channel;
-    float_t motor_timer_old_val_us;
-    float_t motor_timer_val_us;
     int32_t motor_direction;
+    uint32_t motor_speed;
     uint16_t motor_pin_direction;
     Encoder * motor_encoder;
-    float_t motor_displacement_time_ms;
 } Motor;
 
 /* FUNCTIONS PROTOTYPES */
