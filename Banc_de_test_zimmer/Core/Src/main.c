@@ -265,6 +265,20 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
+/**
+  * @brief  This function is executed in case of a limit switch interruption
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if(GPIO_Pin == (limit_switch_vert_1_Pin || limit_switch_vert_2_Pin || limit_switch_hor_1_Pin || limit_switch_hor_2_Pin)) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    HAL_TIM_PWM_Stop(&htim2, motor_adapt_pulse_Pin);
+    HAL_TIM_PWM_Stop(&htim2, motor_horizontal_pulse_Pin);
+    HAL_TIM_PWM_Stop(&htim2, motor_vertical_left_right_pulse_Pin);
+    }
+}
+
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number

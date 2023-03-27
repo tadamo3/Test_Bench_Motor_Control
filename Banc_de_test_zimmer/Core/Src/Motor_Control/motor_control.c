@@ -64,17 +64,18 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
     uint8_t motor_status_movement = MOTOR_STATE_RESERVED;
 
     /* Update position errors for adjustement of PID */
-    motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
-    float_t speed_mm_s = (1/PULSE) * CLOCK_FREQUENCY * DISTANCE_PER_REVOLUTION_MM / (1 + max_arr_value);
-   // float_t run_time_ms = (position_to_reach_mm - current_position_mm) / speed_mm_s;
-    float_t run_time_ms = 1000*(30 - 10) / speed_mm_s;
+    //motor->motor_current_position_error_mm = position_to_reach_mm - current_position_mm;
+    float_t speed_mm_s = (1 / PULSE) * CLOCK_FREQUENCY * DISTANCE_PER_REVOLUTION_MM / (1 + max_arr_value);
+    //float_t run_time_ms = 1000*(position_to_reach_mm - current_position_mm) / speed_mm_s;
+    float_t run_time_ms = (30 - 10) / speed_mm_s;
 
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
     motor->motor_arr_value = max_arr_value;
     motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
     
     motor_status_movement = MOTOR_STATE_AUTO_IN_TRAJ;
-    HAL_Delay((int)run_time_ms);
+    //HAL_Delay(1000);
+    HAL_Delay((uint32_t)run_time_ms);
 
 
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
