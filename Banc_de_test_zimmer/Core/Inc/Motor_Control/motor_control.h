@@ -22,7 +22,7 @@
 
 /* FUNCTIONS PROTOTYPES */
 uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_position, float error_final, int max_arr_value, Motor * motor);
-void motor_control_change_speed(uint8_t motor_id, uint16_t speed, Motor * motor);
+uint8_t motor_change_params(uint8_t command, uint16_t data, Motor * motor);
 uint8_t motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor);
 void verify_change_direction(float_t pid_speed, Motor * motor);
 void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * serial_data_out, Motor * motor_array);

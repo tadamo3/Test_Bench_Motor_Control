@@ -92,8 +92,8 @@ void Error_Handler(void);
 #define USB_FS_OVCR_Pin GPIO_PIN_7
 #define USB_FS_OVCR_GPIO_Port GPIOG
 #define USB_FS_OVCR_EXTI_IRQn EXTI9_5_IRQn
-#define encoder_vertical_left_Z_Pin GPIO_PIN_8
-#define encoder_vertical_left_Z_GPIO_Port GPIOC
+#define motor_horizontal_pulseC6_Pin GPIO_PIN_6
+#define motor_horizontal_pulseC6_GPIO_Port GPIOC
 #define motor_horizontal_dir_Pin GPIO_PIN_8
 #define motor_horizontal_dir_GPIO_Port GPIOA
 #define USB_FS_VBUS_Pin GPIO_PIN_9
