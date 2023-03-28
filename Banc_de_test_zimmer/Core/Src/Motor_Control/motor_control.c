@@ -66,22 +66,59 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
 {
     uint8_t motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
 
+    max_arr_value = motor->motor_speed;
+    float_t pwm_frequency_hz_stage1 = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + (max_arr_value*4)));
+    pwm_frequency_hz_stage1 = pwm_frequency_hz_stage1 / 400;
+    
+    float_t pwm_frequency_hz_stage2 = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + (max_arr_value*2)));
+    pwm_frequency_hz_stage2 = pwm_frequency_hz_stage2 / 400;
+
     float_t pwm_frequency_hz = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + max_arr_value));
     pwm_frequency_hz = pwm_frequency_hz / 400;
 
     float speed_mm_per_sec = pwm_frequency_hz;
-    float_t run_time_ms = 1000 * (30 - 10) / speed_mm_per_sec;
+    float_t run_time_ms = 1000 * (50 - 10) / ((0.20*pwm_frequency_hz_stage1)+(0.20*pwm_frequency_hz_stage2)+(0.6*speed_mm_per_sec));
 
     /* Start of trajectory */
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
+
+
+    /*Acceleration stage 1*/   
+    motor->motor_timer->ARR = max_arr_value*4;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    HAL_Delay((int)(0.10*run_time_ms));
+
+    
+    /*Acceleration stage 2*/
+    motor->motor_timer->ARR = max_arr_value*2;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    HAL_Delay((int)(0.10*run_time_ms));
+
+
+    /*steady speed*/
     motor->motor_timer->ARR = max_arr_value;
     motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    HAL_Delay((int)(0.6*run_time_ms));
+
+    /*Decceleration stage 1*/
+    motor->motor_timer->ARR = max_arr_value*2;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    HAL_Delay((int)(0.10*run_time_ms));
+
     
-    HAL_Delay((int)run_time_ms);
+    /*Acceleration stage 2*/
+    motor->motor_timer->ARR = max_arr_value*4;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+    HAL_Delay((int)(0.10*run_time_ms));
+    
+    
 
     /* End of trajectory */
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
     HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
+    HAL_Delay(300);
+
+    
 
     return motor_status_movement;
 }
