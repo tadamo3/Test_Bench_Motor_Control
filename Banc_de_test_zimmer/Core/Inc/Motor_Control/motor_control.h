@@ -19,8 +19,8 @@
 #define DISTANCE_PER_REVOLUTION_MM 5
 #define PULSE 400
 #define OFFSET_INDEX_MOTOR_ARRAY 4
-#define ACCELERATION_RATIO 0.2 //acceleration pourcentage of run_time
-#define ACCELERATION_STAGE 10 //number of acceleration stages
+#define ACCELERATION_RATIO 0.1 //acceleration pourcentage of run_time
+#define ACCELERATION_STAGE 10 //number of acceleration stages (MAX 15)
 
 /* FUNCTIONS PROTOTYPES */
 uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_position, float error_final, int max_arr_value, Motor * motor);

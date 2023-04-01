@@ -47,7 +47,7 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
         }
         else if (serial_data_in->mode == MODE_POSITION_CONTROL)
         {   
-            motor_state = motor_control_position((float_t)serial_data_in->data, motor_array[motor_index_to_control].motor_current_position, 0.25f, 4*28000, &motor_array[motor_index_to_control]);
+            motor_state = motor_control_position((float_t)serial_data_in->data, motor_array[motor_index_to_control].motor_current_position, 0.25f, 40000, &motor_array[motor_index_to_control]);
         }
         else if (serial_data_in->mode == MODE_CHANGE_PARAMS)
         {
@@ -66,12 +66,13 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
 {
     uint8_t motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
 
-    max_arr_value = motor->motor_speed;
+    //max_arr_value = motor->motor_speed;
 
     float_t pwm_frequency_hz = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + max_arr_value));
     float speed_mm_per_sec = pwm_frequency_hz / PULSE;
-
-    float speed_mm_per_sec_stage_mean_value = speed_mm_per_sec * 0.5;
+    float speed_hz_initial = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + 65000));
+    float speed_mm_per_sec_initial = speed_hz_initial / PULSE;
+    float speed_mm_per_sec_stage_mean_value = speed_mm_per_sec_initial + (speed_mm_per_sec - speed_mm_per_sec_initial) * 0.5;
 
     float_t run_time_ms = 1000 * (50 - 10) / ((2 * ACCELERATION_RATIO * speed_mm_per_sec_stage_mean_value) + ((1 - (2* ACCELERATION_RATIO)) * speed_mm_per_sec));
 
@@ -79,22 +80,27 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
 
     /*Acceleration in a stages*/
-    for(uint8_t a = ACCELERATION_STAGE; a < 1; a = a - 1 )
+    for(uint8_t a = 1; a <= ACCELERATION_STAGE; a++) //IF THERE IS A DEVIATION, ADD 1 TO ACCELERATION STAGE
     {
-        motor->motor_timer->ARR = max_arr_value * a;
+    
+        float speed_stage = speed_mm_per_sec * (a / ACCELERATION_STAGE);
+        motor->motor_timer->ARR = DISTANCE_PER_REVOLUTION_MM * CLOCK_FREQUENCY / (PULSE * speed_stage) - 1;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
         HAL_Delay((int)((ACCELERATION_RATIO / ACCELERATION_STAGE) * run_time_ms));
+        
     }
 
     /*steady speed*/
     motor->motor_timer->ARR = max_arr_value;
     motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
     HAL_Delay((int)((1 - (2 * ACCELERATION_RATIO)) * run_time_ms));
+    
 
    /*Decceleration in a stages*/
-    for(uint8_t a = 1; a < ACCELERATION_STAGE; a = a + 1 )
+    for(uint8_t a = ACCELERATION_STAGE; a > 0; a--)
     {
-        motor->motor_timer->ARR = max_arr_value * a;
+        float speed_stage = speed_mm_per_sec * (a / ACCELERATION_STAGE);
+        motor->motor_timer->ARR = DISTANCE_PER_REVOLUTION_MM * CLOCK_FREQUENCY / (PULSE * speed_stage) - 1;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
         HAL_Delay((int)((ACCELERATION_RATIO / ACCELERATION_STAGE) * run_time_ms));
     }
@@ -102,7 +108,7 @@ uint8_t motor_control_position(float position_to_reach_mm, uint32_t current_posi
     /* End of trajectory */
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
     HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
-    HAL_Delay(300);
+    HAL_Delay(1000);
 
     return motor_status_movement;
 }
