@@ -29,10 +29,14 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer = TIM2,
     .motor_timer_channel = TIM_CHANNEL_1,
     .motor_direction = MOTOR_STATE_VERTICAL_UP,
-    .motor_speed = MINIMUM_MOTOR_SPEED,
+    .motor_speed = INITIAL_MOTOR_SPEED,
+    .motor_gpio_channel = GPIOE,
     .motor_pin_direction = motor_vertical_left_right_dir_Pin,
     .motor_encoder = &encoder_array[INDEX_ENCODER_VERTICAL_LEFT],
   };
+
+  motor_vertical_left.motor_timer->ARR = motor_vertical_left.motor_speed;
+  motor_vertical_left.motor_timer->CCR1 = motor_vertical_left.motor_timer->ARR / 2;
 
   Motor motor_vertical_right = {
     .motor_id = ID_MOTOR_VERTICAL_RIGHT,
@@ -41,10 +45,14 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer = TIM2,
     .motor_timer_channel = TIM_CHANNEL_1,
     .motor_direction = MOTOR_STATE_VERTICAL_UP,
-    .motor_speed = MINIMUM_MOTOR_SPEED,
+    .motor_speed = INITIAL_MOTOR_SPEED,
+    .motor_gpio_channel = GPIOE,
     .motor_pin_direction = motor_vertical_left_right_dir_Pin,
     .motor_encoder = &encoder_array[INDEX_ENCODER_VERTICAL_RIGHT],
   };
+
+  motor_vertical_right.motor_timer->ARR = motor_vertical_right.motor_speed;
+  motor_vertical_right.motor_timer->CCR1 = motor_vertical_right.motor_timer->ARR / 2;
 
   Motor motor_horizontal = {
     .motor_id = ID_MOTOR_HORIZONTAL,
@@ -53,10 +61,14 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer = TIM8,
     .motor_timer_channel = TIM_CHANNEL_1,
     .motor_direction = MOTOR_STATE_HORIZONTAL_LEFT,
-    .motor_speed = MINIMUM_MOTOR_SPEED,
+    .motor_speed = INITIAL_MOTOR_SPEED,
+    .motor_gpio_channel = GPIOA,
     .motor_pin_direction = motor_horizontal_dir_Pin,
     .motor_encoder = &encoder_array[INDEX_MOTOR_HORIZONTAL],
   };
+
+  motor_horizontal.motor_timer->ARR = motor_horizontal.motor_speed;
+  motor_horizontal.motor_timer->CCR1 = motor_horizontal.motor_timer->ARR / 2;
 
     /* Fill the array of structures */
     motor_array[INDEX_MOTOR_VERTICAL_LEFT]  = motor_vertical_left;

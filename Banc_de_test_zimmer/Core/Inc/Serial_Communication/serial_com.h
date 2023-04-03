@@ -34,6 +34,7 @@ typedef struct SerialDataIn
     uint8_t mode;
     uint8_t id;
     uint8_t command;
+    uint8_t previous_command;
     uint16_t data;
 } SerialDataIn;
 

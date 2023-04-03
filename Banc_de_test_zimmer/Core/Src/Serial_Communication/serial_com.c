@@ -43,13 +43,7 @@ void serial_build_message(uint8_t motor_id, uint8_t status_motor, uint8_t status
 void serial_data_parser(SerialDataIn * serial_data_in)
 {
     serial_data_in->id = serial_data_in->buffer[INDEX_ID_BYTE];
-
-    uint8_t temp_mode = (serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE) >> 5;
-    if (temp_mode != MODE_RESERVED)
-    {
-        serial_data_in->mode = temp_mode;
-    }
-    
+    serial_data_in->mode = (serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_MODE) >> 5;
     serial_data_in->command = serial_data_in->buffer[INDEX_COMMAND_BYTE] & MASK_COMMAND;
     serial_data_in->data = (serial_data_in->buffer[INDEX_DATA_FIRST_BYTE] + (serial_data_in->buffer[INDEX_DATA_SECOND_BYTE] << 8));
 }

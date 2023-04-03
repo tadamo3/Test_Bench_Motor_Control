@@ -62,7 +62,6 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN 0 */
 uint8_t rx_buffer[10];
 uint32_t tx_buffer[2];
-uint32_t counter_turns = 0;
 
 /**
  * @brief
@@ -127,11 +126,12 @@ int main(void)
 
   /* STRUCTURES */
   SerialDataIn serial_data_in = {
-    .buffer   = rx_buffer,
-    .mode     = 0u,
-    .id       = 0u,
-    .command  = 0u,
-    .data     = 0u,
+    .buffer           = rx_buffer,
+    .mode             = 0u,
+    .id               = 0u,
+    .command          = 0u,
+    .previous_command = 0u,
+    .data             = 0u,
   };
 
   SerialDataOut serial_data_out = {
@@ -153,35 +153,15 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* Read and dispatch commands coming from the GUI */
+    /* Read commands coming from the GUI */
     serial_data_parser(&serial_data_in);
 
-    /* Read all encoder */
-    for (uint8_t i = 0; i < 1; i++)
-    {
-      motor_array[i].motor_current_position = encoder_read_value(motor_array[i].motor_encoder);
-    }
-
+    /* Dispatch commands to the motors */
     motor_control_dispatch(&serial_data_in, &serial_data_out, motor_array);
-
-    /*
-    HAL_TIM_PWM_Start(motor_array[0].motor_htim, motor_array[0].motor_timer_channel);
-    motor_array[0].motor_timer->ARR = 4*28000;
-    motor_array[0].motor_timer->CCR1 = motor_array[0].motor_timer->ARR / 2;
-
-    for (int i = 0; i < 2000; i++)
-    {
-      HAL_Delay(1);
-    }
-
-    HAL_TIM_PWM_Stop(motor_array[0].motor_htim, motor_array[0].motor_timer_channel);
-    HAL_GPIO_TogglePin(GPIOE, motor_array[0].motor_pin_direction);
-    */
 
     HAL_Delay(100);
 
     /* USER CODE END WHILE */
-
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -263,20 +243,6 @@ void Error_Handler(void)
   {
   }
   /* USER CODE END Error_Handler_Debug */
-}
-
-/**
-  * @brief  This function is executed in case of a limit switch interruption
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-    if(GPIO_Pin == (limit_switch_vert_1_Pin || limit_switch_vert_2_Pin || limit_switch_hor_1_Pin || limit_switch_hor_2_Pin)) // If The INT Source Is EXTI Line9 (A9 Pin)
-    {
-    HAL_TIM_PWM_Stop(&htim2, motor_adapt_pulse_Pin);
-    HAL_TIM_PWM_Stop(&htim2, motor_horizontal_pulse_Pin);
-    HAL_TIM_PWM_Stop(&htim2, motor_vertical_left_right_pulse_Pin);
-    }
 }
 
 #ifdef  USE_FULL_ASSERT

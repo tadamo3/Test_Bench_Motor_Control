@@ -29,6 +29,7 @@
 
 #define MINIMUM_MOTOR_SPEED 65000
 #define MAXIMUM_MOTOR_SPEED 20000
+#define INITIAL_MOTOR_SPEED 42500
 #define INTERVAL_SPEED 450
 
 /**
@@ -69,6 +70,7 @@ typedef struct Motor
     uint16_t motor_timer_channel;
     int32_t motor_direction;
     uint32_t motor_speed;
+    GPIO_TypeDef * motor_gpio_channel;
     uint16_t motor_pin_direction;
     Encoder * motor_encoder;
 } Motor;
