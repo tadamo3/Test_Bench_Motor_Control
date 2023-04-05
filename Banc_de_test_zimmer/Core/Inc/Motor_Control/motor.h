@@ -22,15 +22,16 @@
 
 
 /* CONSTANTS */
-#define NUMBER_MOTOR 3
+#define NUMBER_MOTOR 4
 #define INDEX_MOTOR_VERTICAL_LEFT 0
 #define INDEX_MOTOR_VERTICAL_RIGHT 1
 #define INDEX_MOTOR_HORIZONTAL 2
+#define INDEX_MOTOR_ADAPT 3
 
-#define MINIMUM_MOTOR_SPEED 65000
-#define MAXIMUM_MOTOR_SPEED 20000
-#define INITIAL_MOTOR_SPEED 42500
-#define INTERVAL_SPEED 450
+#define MINIMUM_MOTOR_SPEED 6500
+#define MAXIMUM_MOTOR_SPEED 2000
+#define INITIAL_MOTOR_SPEED 4250
+#define INTERVAL_SPEED 45
 
 /**
  * @brief Enum to represent any motors state
@@ -48,6 +49,9 @@ enum motor_state
     MOTOR_STATE_AUTO_IN_TRAJ        = 7,
     MOTOR_STATE_AUTO_END_OF_TRAJ    = 8,
     MOTOR_STATE_CHANGE_PARAMS       = 9,
+    MOTOR_STATE_ADAPT_UP            = 10,
+    MOTOR_STATE_ADAPT_DOWN          = 11,
+    MOTOR_STATE_ADAPT_STOP          = 12,
 };
 
 enum motor_fault

@@ -70,8 +70,25 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
   motor_horizontal.motor_timer->ARR = motor_horizontal.motor_speed;
   motor_horizontal.motor_timer->CCR1 = motor_horizontal.motor_timer->ARR / 2;
 
+  Motor motor_adapt = {
+    .motor_id = ID_MOTOR_ADAPT,
+    .motor_current_position = 0u,
+    .motor_htim = &htim4,
+    .motor_timer = TIM4,
+    .motor_timer_channel = TIM_CHANNEL_1,
+    .motor_direction = MOTOR_STATE_ADAPT_UP,
+    .motor_speed = 45000,
+    .motor_gpio_channel = GPIOE,
+    .motor_pin_direction = mototr_adapt_dir_Pin,
+    .motor_encoder = NULL,
+  };
+
+  motor_adapt.motor_timer->ARR = motor_adapt.motor_speed;
+  motor_adapt.motor_timer->CCR1 = motor_adapt.motor_timer->ARR / 2;
+
     /* Fill the array of structures */
     motor_array[INDEX_MOTOR_VERTICAL_LEFT]  = motor_vertical_left;
     motor_array[INDEX_MOTOR_VERTICAL_RIGHT] = motor_vertical_right; 
-    motor_array[INDEX_MOTOR_HORIZONTAL]     = motor_horizontal; 
+    motor_array[INDEX_MOTOR_HORIZONTAL]     = motor_horizontal;
+    motor_array[INDEX_MOTOR_ADAPT]          = motor_adapt;
 }

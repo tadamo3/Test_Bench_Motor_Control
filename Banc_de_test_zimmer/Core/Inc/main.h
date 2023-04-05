@@ -87,8 +87,6 @@ void Error_Handler(void);
 #define STLK_VCP_RX_GPIO_Port GPIOD
 #define STLK_VCP_TX_Pin GPIO_PIN_9
 #define STLK_VCP_TX_GPIO_Port GPIOD
-#define motor_adapt_pulse_Pin GPIO_PIN_15
-#define motor_adapt_pulse_GPIO_Port GPIOD
 #define USB_FS_OVCR_Pin GPIO_PIN_7
 #define USB_FS_OVCR_GPIO_Port GPIOG
 #define USB_FS_OVCR_EXTI_IRQn EXTI9_5_IRQn

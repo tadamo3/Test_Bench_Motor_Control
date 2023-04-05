@@ -56,6 +56,7 @@ enum ID
     ID_MOTOR_VERTICAL_LEFT      = 4,
     ID_MOTOR_VERTICAL_RIGHT     = 5,
     ID_MOTOR_HORIZONTAL         = 6,
+    ID_MOTOR_ADAPT              = 7,
 };
 
 enum COMMANDS
@@ -68,6 +69,9 @@ enum COMMANDS
     COMMAND_MOTOR_HORIZONTAL_LEFT       = 5,
     COMMAND_MOTOR_HORIZONTAL_STOP       = 6,
     COMMAND_MOTOR_CHANGE_SPEED          = 7,
+    COMMAND_MOTOR_ADAPT_UP              = 8,
+    COMMAND_MOTOR_ADAPT_DOWN            = 9,
+    COMMAND_MOTOR_ADAPT_STOP            = 10,
 };
 
 enum MODES

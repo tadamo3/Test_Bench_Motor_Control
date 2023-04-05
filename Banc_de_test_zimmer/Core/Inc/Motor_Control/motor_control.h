@@ -16,11 +16,14 @@
 
 /* CONSTANTS */
 #define CLOCK_FREQUENCY 72000000
-#define DISTANCE_PER_REVOLUTION_MM 5
-#define PULSE 400
+#define DISTANCE_PER_TURN_MM 5
+#define STEPS_PER_TURN 400
+#define RAMPUP_RATIO 0.2
+#define NUMBER_OF_STAGES 10
+#define PRESCALER 10
+#define FACTOR_CONVERSTION_SEC_TO_MS 1000
+
 #define OFFSET_INDEX_MOTOR_ARRAY 4
-#define ACCELERATION_RATIO 0.1 //acceleration pourcentage of run_time
-#define ACCELERATION_STAGE 10 //number of acceleration stages (MAX 15)
 
 /* FUNCTIONS PROTOTYPES */
 uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm, Motor * motor);

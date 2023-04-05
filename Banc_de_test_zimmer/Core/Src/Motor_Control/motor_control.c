@@ -35,7 +35,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
         /* Stops all motors */
         HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
         HAL_TIM_PWM_Stop(&htim8, TIM_CHANNEL_1);
-        HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_1);
 
         g_is_limit_reached = true;
     }
@@ -95,50 +95,52 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
 
 uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm, Motor * motor)
 {
-    uint8_t motor_status_movement = MOTOR_STATE_AUTO_END_OF_TRAJ;
+    float_t peak_pwm_frequency_hz = CLOCK_FREQUENCY / ((motor->motor_speed + 1) * (PRESCALER + 1));
+    float_t peak_speed_mm_per_sec = ((DISTANCE_PER_TURN_MM) * peak_pwm_frequency_hz) / STEPS_PER_TURN;
+    
+    float_t lowest_pwm_frequency_hz = CLOCK_FREQUENCY / ((MINIMUM_MOTOR_SPEED + 1) * (PRESCALER + 1));
+    float_t lowest_speed_mm_per_sec = ((DISTANCE_PER_TURN_MM) * lowest_pwm_frequency_hz) / STEPS_PER_TURN;
+    
+    float_t median_speed_mm_per_sec = lowest_speed_mm_per_sec + ((peak_speed_mm_per_sec - lowest_speed_mm_per_sec) * 0.5);
 
-    uint32_t max_arr_value = motor->motor_speed;
-
-    float_t pwm_frequency_hz = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + max_arr_value));
-    float speed_mm_per_sec = pwm_frequency_hz / PULSE;
-    float speed_hz_initial = DISTANCE_PER_REVOLUTION_MM * (CLOCK_FREQUENCY / (1 + 65000));
-    float speed_mm_per_sec_initial = speed_hz_initial / PULSE;
-    float speed_mm_per_sec_stage_mean_value = speed_mm_per_sec_initial + (speed_mm_per_sec - speed_mm_per_sec_initial) * 0.5;
-
-    float_t run_time_ms = 1000 * (50 - 10) / ((2 * ACCELERATION_RATIO * speed_mm_per_sec_stage_mean_value) + ((1 - (2* ACCELERATION_RATIO)) * speed_mm_per_sec));
+    float_t run_time_ms = (FACTOR_CONVERSTION_SEC_TO_MS * position_to_reach_mm) / ((2 * RAMPUP_RATIO * median_speed_mm_per_sec) + ((1 - (2 * RAMPUP_RATIO)) * peak_speed_mm_per_sec));
 
     /* Start of trajectory */
     verify_change_direction(direction, &g_is_stop_activated, motor);
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
+    
+    /*Acceleration in stages*/
+    float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
 
-    /*Acceleration in a stages*/
-    for(uint8_t a = 1; a <= ACCELERATION_STAGE; a++) //IF THERE IS A DEVIATION, ADD 1 TO ACCELERATION STAGE
+    for (uint8_t i = 1; i < NUMBER_OF_STAGES; i++)
     {
-        float speed_stage = speed_mm_per_sec * (a / ACCELERATION_STAGE);
-        motor->motor_timer->ARR = DISTANCE_PER_REVOLUTION_MM * CLOCK_FREQUENCY / (PULSE * speed_stage) - 1;
+        float current_speed = (peak_speed_mm_per_sec * i) / NUMBER_OF_STAGES;
+        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
+
+        motor->motor_timer->ARR = new_arr;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-        HAL_Delay((int)((ACCELERATION_RATIO / ACCELERATION_STAGE) * run_time_ms));
-        
+
+        HAL_Delay((int)delay_in_rampup_ms);
     }
 
-    /*steady speed*/
-    motor->motor_timer->ARR = max_arr_value;
-    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-    HAL_Delay((int)((1 - (2 * ACCELERATION_RATIO)) * run_time_ms));
+    /* Steady speed */
+    float_t delay_in_steady_ms = (1 - (2 * RAMPUP_RATIO)) * run_time_ms;
+    HAL_Delay((uint32_t)delay_in_steady_ms);
     
-
-   /*Decceleration in a stages*/
-    for(uint8_t a = ACCELERATION_STAGE; a > 0; a--)
+    /*Decceleration in stages*/
+    for (uint8_t i = NUMBER_OF_STAGES; i > 0; i--)
     {
-        float speed_stage = speed_mm_per_sec * (a / ACCELERATION_STAGE);
-        motor->motor_timer->ARR = DISTANCE_PER_REVOLUTION_MM * CLOCK_FREQUENCY / (PULSE * speed_stage) - 1;
+        float current_speed = (peak_speed_mm_per_sec * i) / NUMBER_OF_STAGES;
+        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
+
+        motor->motor_timer->ARR = new_arr;
         motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-        HAL_Delay((int)((ACCELERATION_RATIO / ACCELERATION_STAGE) * run_time_ms));
+
+        HAL_Delay((int)delay_in_rampup_ms);
     }
     
     /* End of trajectory */
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
-    HAL_GPIO_TogglePin(GPIOE, motor->motor_pin_direction);
     HAL_Delay(1000);
 
     return MOTOR_STATE_AUTO_END_OF_TRAJ;
@@ -208,6 +210,26 @@ void verify_change_direction(uint8_t direction, bool * is_stop_activated, Motor 
 
             break;
         
+        case COMMAND_MOTOR_ADAPT_UP:
+            if (motor->motor_direction == MOTOR_STATE_ADAPT_DOWN)
+            {
+                motor->motor_direction = MOTOR_STATE_ADAPT_UP;
+                HAL_GPIO_TogglePin(motor->motor_gpio_channel, motor->motor_pin_direction);
+            }
+            *is_stop_activated = false;
+
+            break;
+        
+        case COMMAND_MOTOR_ADAPT_DOWN:
+            if (motor->motor_direction == MOTOR_STATE_ADAPT_UP)
+            {
+                motor->motor_direction = MOTOR_STATE_ADAPT_DOWN;
+                HAL_GPIO_TogglePin(motor->motor_gpio_channel, motor->motor_pin_direction);
+            }
+            *is_stop_activated = false;
+
+            break;
+        
         case COMMAND_MOTOR_VERTICAL_STOP:
             *is_stop_activated = true;
             HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
@@ -215,6 +237,12 @@ void verify_change_direction(uint8_t direction, bool * is_stop_activated, Motor 
             break;
         
         case COMMAND_MOTOR_HORIZONTAL_STOP:
+            *is_stop_activated = true;
+            HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
+
+            break;
+        
+        case COMMAND_MOTOR_ADAPT_STOP:
             *is_stop_activated = true;
             HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
 
