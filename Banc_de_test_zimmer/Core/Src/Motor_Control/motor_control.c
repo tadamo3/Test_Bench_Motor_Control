@@ -104,6 +104,7 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     float_t median_speed_mm_per_sec = lowest_speed_mm_per_sec + ((peak_speed_mm_per_sec - lowest_speed_mm_per_sec) * 0.5);
 
     float_t run_time_ms = (FACTOR_CONVERSTION_SEC_TO_MS * position_to_reach_mm) / ((2 * RAMPUP_RATIO * median_speed_mm_per_sec) + ((1 - (2 * RAMPUP_RATIO)) * peak_speed_mm_per_sec));
+    float_t speed_increments = (peak_speed_mm_per_sec - lowest_speed_mm_per_sec) / NUMBER_OF_STAGES;
 
     /* Start of trajectory */
     verify_change_direction(direction, &g_is_stop_activated, motor);
@@ -112,9 +113,9 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     /*Acceleration in stages*/
     float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
 
-    for (uint8_t i = 1; i < NUMBER_OF_STAGES; i++)
+    for (uint8_t i = 0; i < NUMBER_OF_STAGES; i++)
     {
-        float current_speed = (peak_speed_mm_per_sec * i) / NUMBER_OF_STAGES;
+        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
         uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
 
         motor->motor_timer->ARR = new_arr;
@@ -124,13 +125,19 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     }
 
     /* Steady speed */
+    float_t current_speed = peak_speed_mm_per_sec;
+    uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
+
+    motor->motor_timer->ARR = new_arr;
+    motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+
     float_t delay_in_steady_ms = (1 - (2 * RAMPUP_RATIO)) * run_time_ms;
     HAL_Delay((uint32_t)delay_in_steady_ms);
     
     /*Decceleration in stages*/
     for (uint8_t i = NUMBER_OF_STAGES; i > 0; i--)
     {
-        float current_speed = (peak_speed_mm_per_sec * i) / NUMBER_OF_STAGES;
+        float_t current_speed = lowest_speed_mm_per_sec + ((i - 1) * speed_increments);
         uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
 
         motor->motor_timer->ARR = new_arr;
