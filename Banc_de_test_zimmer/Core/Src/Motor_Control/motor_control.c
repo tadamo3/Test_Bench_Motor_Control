@@ -60,7 +60,7 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
     uint8_t motor_state = MOTOR_STATE_RESERVED;
 
     uint8_t motor_status_component = verify_motor_id(serial_data_in);
-    if (motor_status_component == MOTOR_FAULT_NONE && (g_is_limit_reached == false))
+    if ((motor_status_component == MOTOR_FAULT_NONE) && (g_is_limit_reached == false))
     {
         motor_index_to_control = serial_data_in->id - OFFSET_INDEX_MOTOR_ARRAY;
 
@@ -70,10 +70,11 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
         }
         else if (serial_data_in->mode == MODE_POSITION_CONTROL)
         {
-            /* Bench test is not supposed to repeat a same movement for safety reasons */
+            /* Bench test cannot repeat the same direction of movements for safety reasons */
             if (serial_data_in->command != serial_data_in->previous_command)
             {
                 /* Send updated trajectory message to GUI */
+                motor_state = MOTOR_STATE_AUTO_IN_TRAJ;
                 serial_build_message(serial_data_in->id, MOTOR_STATE_AUTO_IN_TRAJ, motor_status_component, motor_array[motor_index_to_control].motor_current_position, serial_data_out);
                 
                 motor_state = motor_control_position(serial_data_in->command, serial_data_in->data, &motor_array[motor_index_to_control]);
@@ -89,8 +90,12 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
         }
     }
 
-    serial_data_in->previous_command = serial_data_in->command;
-    serial_build_message(serial_data_in->id, motor_state, motor_status_component, motor_array[motor_index_to_control].motor_current_position, serial_data_out);
+    if (motor_state != MOTOR_STATE_RESERVED)
+    {
+        serial_data_in->previous_command = serial_data_in->command;
+
+        serial_build_message(serial_data_in->id, motor_state, motor_status_component, motor_array[motor_index_to_control].motor_current_position, serial_data_out);
+    }
 }
 
 uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm, Motor * motor)
