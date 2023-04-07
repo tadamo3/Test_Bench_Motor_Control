@@ -118,7 +118,7 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     /*Acceleration in stages*/
     float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
 
-    for (uint8_t i = 0; i < NUMBER_OF_STAGES; i++)
+    for (uint8_t i = 1; i <= NUMBER_OF_STAGES; i++)
     {
         float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
         uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
@@ -142,7 +142,7 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     /*Decceleration in stages*/
     for (uint8_t i = NUMBER_OF_STAGES; i > 0; i--)
     {
-        float_t current_speed = lowest_speed_mm_per_sec + ((i - 1) * speed_increments);
+        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
         uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
 
         motor->motor_timer->ARR = new_arr;
@@ -153,7 +153,7 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     
     /* End of trajectory */
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
-    HAL_Delay(1000);
+    HAL_Delay(300);
 
     return MOTOR_STATE_AUTO_END_OF_TRAJ;
 }
