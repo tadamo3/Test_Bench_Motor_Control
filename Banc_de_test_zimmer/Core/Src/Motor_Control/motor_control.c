@@ -42,6 +42,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 }
 
 /* FUNCTIONS */
+/**
+ * @brief
+ * External interrupt function when a limit switch is activated - stops all motors and sends an update to the GUI
+ * 
+ * @param[in] direction             Direction state
+ * @param[in] position_to_reach_mm  Distance to travel from current position (mm)
+ * @param[inout] motor              Current motor structure
+ */
 static inline uint8_t verify_motor_id(SerialDataIn * serial_data_in)
 {
     uint8_t is_motor_id_valid = MOTOR_FAULT_INVALID_ID;
@@ -53,6 +61,60 @@ static inline uint8_t verify_motor_id(SerialDataIn * serial_data_in)
     return is_motor_id_valid;
 }
 
+/**
+ * @brief
+ * Controls the motor speed in stages to reach the desired cruising speed.
+ * The acceleration is constant.
+ * @param[in] delay_in_rampup_ms        Time of each acceleration stage
+ * @param[in] speed_increment           Speed increment between each acceleration stage (mm/s)
+ * @param[in] lowest_speed_mm_per_sec   Minimum speed (mm/s)
+ * @param[inout] motor                  Current motor structure
+ */
+static inline void motor_acceleration(float_t delay_in_rampup_ms, float_t speed_increments, float_t lowest_speed_mm_per_sec, Motor * motor)
+{
+    for (uint8_t i = 1; i <= NUMBER_OF_STAGES; i++)
+    {
+        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
+        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
+
+        motor->motor_timer->ARR = new_arr;
+        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+
+        HAL_Delay((int)delay_in_rampup_ms);
+    }
+}
+
+/**
+ * @brief
+ * Controls the motor speed in stages to reach the minimum speed from the cruising speed.
+ * The deceleration is constant.
+ * @param[in] delay_in_rampup_ms        Time of each deceleration stage
+ * @param[in] speed_increment           Speed increment between each deceleration stage (mm/s)
+ * @param[in] lowest_speed_mm_per_sec   Minimum speed (mm/s)
+ * @param[inout] motor                  Current motor structure
+ */
+static inline void motor_deceleration(float_t delay_in_rampup_ms, float_t speed_increments, float_t lowest_speed_mm_per_sec, Motor * motor)
+{
+    for (uint8_t i = NUMBER_OF_STAGES; i > 0; i--)
+    {
+        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
+        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
+
+        motor->motor_timer->ARR = new_arr;
+        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
+
+        HAL_Delay((int)delay_in_rampup_ms);
+    }
+}
+
+/**
+ * @brief
+ * Dispatches the incoming motor control insctruction from GUI.
+ * 
+ * @param[in] serial_data_in      Current serial data input structure
+ * @param[out] serial_data_out    Current serial data output structure
+ * @param[inout] motor_array      Current motor structure
+ */
 void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * serial_data_out, Motor * motor_array)
 {
     /* Set reference states and faults */
@@ -98,6 +160,15 @@ void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * seria
     }
 }
 
+/**
+ * @brief
+ * Controls the motor speed with acceleration and decceleration stages to reach a desired distance at 
+ * a certain cruising speed. 
+ * 
+ * @param[in] direction             Direction state
+ * @param[in] position_to_reach_mm  Distance to travel from current position (mm)
+ * @param[inout] motor              Current motor structure
+ */
 uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm, Motor * motor)
 {
     float_t peak_pwm_frequency_hz = CLOCK_FREQUENCY / ((motor->motor_speed + 1) * (PRESCALER + 1));
@@ -115,19 +186,10 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     verify_change_direction(direction, &g_is_stop_activated, motor);
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
     
+     float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
+    
     /*Acceleration in stages*/
-    float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
-
-    for (uint8_t i = 1; i <= NUMBER_OF_STAGES; i++)
-    {
-        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
-        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
-
-        motor->motor_timer->ARR = new_arr;
-        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-
-        HAL_Delay((int)delay_in_rampup_ms);
-    }
+    motor_acceleration(delay_in_rampup_ms, speed_increments,lowest_speed_mm_per_sec, motor);
 
     /* Steady speed */
     float_t current_speed = peak_speed_mm_per_sec;
@@ -139,17 +201,8 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     float_t delay_in_steady_ms = (1 - (2 * RAMPUP_RATIO)) * run_time_ms;
     HAL_Delay((uint32_t)delay_in_steady_ms);
     
-    /*Decceleration in stages*/
-    for (uint8_t i = NUMBER_OF_STAGES; i > 0; i--)
-    {
-        float_t current_speed = lowest_speed_mm_per_sec + (i * speed_increments);
-        uint32_t new_arr = ((CLOCK_FREQUENCY * DISTANCE_PER_TURN_MM) / (STEPS_PER_TURN * (PRESCALER + 1) * current_speed)) - 1;
-
-        motor->motor_timer->ARR = new_arr;
-        motor->motor_timer->CCR1 = motor->motor_timer->ARR / 2;
-
-        HAL_Delay((int)delay_in_rampup_ms);
-    }
+    /*Deceleration in stages*/
+    motor_deceleration(delay_in_rampup_ms, speed_increments, lowest_speed_mm_per_sec, motor);
     
     /* End of trajectory */
     HAL_TIM_PWM_Stop(motor->motor_htim, motor->motor_timer_channel);
@@ -158,6 +211,15 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     return MOTOR_STATE_AUTO_END_OF_TRAJ;
 }
 
+/**
+ * @brief
+ * Changes motor parameters and status
+ * 
+ * @param[in] command       Serial command status
+ * @param[in] data          Corresponding data to modify a parameter with
+ * @param[inout] motor      Current motor structure
+ * @param[out] motor_status Motor status    
+ */
 uint8_t motor_change_params(uint8_t command, uint16_t data, Motor * motor)
 {
     uint8_t motor_status = MOTOR_STATE_RESERVED;
