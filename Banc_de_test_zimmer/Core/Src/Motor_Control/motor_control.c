@@ -155,6 +155,8 @@ uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm,
     verify_change_direction(direction, &g_is_stop_activated, motor);
     HAL_TIM_PWM_Start(motor->motor_htim, motor->motor_timer_channel);
     
+     float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
+    
     /*Acceleration in stages*/
     float_t delay_in_rampup_ms = (RAMPUP_RATIO / NUMBER_OF_STAGES) * run_time_ms;
 
