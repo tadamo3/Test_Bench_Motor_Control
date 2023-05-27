@@ -61,7 +61,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t rx_buffer[10];
-uint32_t tx_buffer[2];
+uint32_t tx_buffer[1];
 
 /**
  * @brief

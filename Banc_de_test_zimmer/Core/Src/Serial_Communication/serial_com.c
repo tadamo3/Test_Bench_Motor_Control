@@ -29,7 +29,6 @@ void serial_build_message(uint8_t motor_id, uint8_t status_motor, uint8_t status
 {
     uint32_t message_to_send = status_motor + (status_movement_motor << 8) + (motor_id << 16);
     serial_data_out->buffer[0] = message_to_send;
-    serial_data_out->buffer[1] = position;
 
     serial_data_transmit(serial_data_out->uart_channel, serial_data_out->buffer, serial_data_out->size_buffer);
 }

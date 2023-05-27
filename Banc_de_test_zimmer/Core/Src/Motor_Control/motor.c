@@ -77,7 +77,7 @@ void motor_init(Motor * motor_array, Encoder * encoder_array)
     .motor_timer = TIM4,
     .motor_timer_channel = TIM_CHANNEL_1,
     .motor_direction = MOTOR_STATE_ADAPT_UP,
-    .motor_speed = 45000,
+    .motor_speed = INITIAL_MOTOR_SPEED,
     .motor_gpio_channel = GPIOE,
     .motor_pin_direction = mototr_adapt_dir_Pin,
     .motor_encoder = NULL,
