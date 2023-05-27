@@ -22,16 +22,34 @@
  */
 void encoder_init(Encoder * encoder_array)
 {
-    Encoder encoder_1 = {
-        .encoder_timer            = TIM1,
+    Encoder encoder_vertical_left = {
+        .encoder_timer            = TIM5,
         .encoder_id               = ID_ENCODER_VERTICAL_LEFT,
         .encoder_current_value    = 0u,
         .encoder_past_value       = 0u,
         .encoder_number_of_turns  = 0u
     };
 
+    Encoder encoder_vertical_right = {
+        .encoder_timer            = TIM23,
+        .encoder_id               = ID_ENCODER_VERTICAL_RIGHT,
+        .encoder_current_value    = 0u,
+        .encoder_past_value       = 0u,
+        .encoder_number_of_turns  = 0u
+    };
+
+    Encoder encoder_horizontal = {
+        .encoder_timer            = TIM24,
+        .encoder_id               = ID_ENCODER_HORIZONTAL,
+        .encoder_current_value    = 0u,
+        .encoder_past_value       = 0u,
+        .encoder_number_of_turns  = 0u
+    };
+
     /* Fill the array of structures */
-    encoder_array[INDEX_ENCODER_1] = encoder_1;
+    encoder_array[INDEX_ENCODER_VERTICAL_LEFT]   = encoder_vertical_left;
+    encoder_array[INDEX_ENCODER_VERTICAL_RIGHT]  = encoder_vertical_right;
+    encoder_array[INDEX_ENCODER__HORIZONTAL]     = encoder_horizontal;
 }
 
 /**
@@ -42,9 +60,9 @@ void encoder_init(Encoder * encoder_array)
  * 
  * @return int32_t Current value of the encoder
  */
-int32_t encoder_read_value(Encoder * encoder)
+uint32_t encoder_read_value(Encoder * encoder)
 {
-    int32_t encoder_value = encoder->encoder_timer->CNT >> 2;
+    uint32_t encoder_value = encoder->encoder_timer->CNT;
     //encoder_value = encoder_value + (encoder->encoder_id << 24);
 
     /* Update encoder values */
@@ -52,4 +70,20 @@ int32_t encoder_read_value(Encoder * encoder)
     encoder->encoder_current_value = encoder_value;
 
     return encoder_value;
+}
+
+/**
+ * @brief 
+ * Converts an absolute encoder position in its mm equivalent
+ * 
+ * @param[in] encoder_position  The absolute position of the encoder
+ * 
+ * @return The converted encoder position in mm 
+ */
+float_t convert_encoder_position_to_mm(int32_t encoder_position)
+{
+    float_t position_mm = (float)encoder_position;
+    position_mm = (position_mm * 5) / (2048 * 4);
+
+    return position_mm;
 }

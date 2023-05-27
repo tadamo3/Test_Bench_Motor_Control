@@ -12,57 +12,24 @@
 #define _MOTOR_CONTROL_H_
 
 /* INCLUDES */
-#include <stdio.h>
-#include <stdbool.h>
-#include "gpio.h"
-#include "tim.h"
-#include "Encoders/encoder.h"
-#include "Serial_Communication/serial_com.h"
+#include "Motor_Control/motor.h"
 
 /* CONSTANTS */
-#define MOTOR_COMPLETE_TURN_DISTANCE_MM 5
+#define CLOCK_FREQUENCY 72000000
+#define DISTANCE_PER_TURN_MM 5
+#define STEPS_PER_TURN 400
+#define RAMPUP_RATIO 0.1
+#define NUMBER_OF_STAGES 15
+#define PRESCALER 10
+#define FACTOR_CONVERSTION_SEC_TO_MS 1000
 
-/* ENUMS */
-/**
- * @brief Enum to represent any motors state
- * 
- */
-enum motor_state
-{
-    MOTOR_STATE_FAULT = -1,
-    MOTOR_STATE_RESERVED = 0,
-    MOTOR_STATE_VERTICAL_UP = 1,
-    MOTOR_STATE_VERTICAL_DOWN = 2,
-    MOTOR_STATE_HORIZONTAL_RIGHT = 3,
-    MOTOR_STATE_HORIZONTAL_LEFT = 4,
-    MOTOR_STATE_VERTICAL_STOP = 5,
-    MOTOR_STATE_HORIZONTAL_STOP = 6,
-};
-
-/* STRUCTURES */
-/**
- * @brief Structure to represent a motor's parameter 
- * 
- */
-typedef struct Motor
-{
-    int32_t motor_arr_value;
-    float motor_position_mm;
-    int32_t motor_position_error_mm;
-    int32_t motor_error_integral;
-    TIM_HandleTypeDef * motor_htim;
-    TIM_TypeDef * motor_timer;
-    uint16_t motor_timer_channel;
-    float_t motor_timer_old_val_us;
-    float_t motor_timer_val_us;
-    int32_t motor_direction;
-    uint16_t motor_pin_direction;
-    Encoder * motor_encoder;
-} Motor;
+#define OFFSET_INDEX_MOTOR_ARRAY 4
 
 /* FUNCTIONS PROTOTYPES */
-void motor_control(float position_to_reach_mm, float error_final, int max_arr_value, Motor * motor);
-void motor_control_change_speed(uint8_t motor_id, uint16_t speed, Motor * motor);
-void motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor);
+uint8_t motor_control_position(uint8_t direction, uint16_t position_to_reach_mm, Motor * motor);
+uint8_t motor_change_params(uint8_t command, uint16_t data, Motor * motor);
+uint8_t motor_control_manual(uint8_t direction, bool * is_stop_activated, Motor * motor);
+void verify_change_direction(uint8_t direction, bool * is_stop_activated, Motor * motor);
+void motor_control_dispatch(SerialDataIn * serial_data_in, SerialDataOut * serial_data_out, Motor * motor_array);
 
 #endif /* _MOTOR_CONTROL_H_ */

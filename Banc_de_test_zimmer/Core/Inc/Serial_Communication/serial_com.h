@@ -23,18 +23,28 @@
 #define INDEX_COMMAND_BYTE      2
 #define INDEX_ID_BYTE           3
 
-#define MASK_ID 0xFF000000
-#define MASK_COMMAND 0x00FF0000
-#define MASK_DATA 0x0000FFFF
+#define MASK_MODE       0xE0
+#define MASK_COMMAND    0x1F
+
 
 /* STRUCTURES */
 typedef struct SerialDataIn
 {
     uint8_t * buffer;
+    uint8_t mode;
     uint8_t id;
     uint8_t command;
+    uint8_t previous_command;
     uint16_t data;
 } SerialDataIn;
+
+typedef struct SerialDataOut
+{
+    uint32_t * buffer;
+    uint32_t message_to_send;
+    UART_HandleTypeDef * uart_channel;
+    size_t size_buffer;
+} SerialDataOut;
 
 /* ENUMS */
 enum ID
@@ -46,6 +56,7 @@ enum ID
     ID_MOTOR_VERTICAL_LEFT      = 4,
     ID_MOTOR_VERTICAL_RIGHT     = 5,
     ID_MOTOR_HORIZONTAL         = 6,
+    ID_MOTOR_ADAPT              = 7,
 };
 
 enum COMMANDS
@@ -56,16 +67,25 @@ enum COMMANDS
     COMMAND_MOTOR_VERTICAL_STOP         = 3,
     COMMAND_MOTOR_HORIZONTAL_RIGHT      = 4,
     COMMAND_MOTOR_HORIZONTAL_LEFT       = 5,
-    COMMAND_MOTOR_CHANGE_SPEED          = 6,
-    COMMAND_READ_ENCODER_VERTICAL_LEFT  = 7,
-    COMMAND_READ_ENCODER_VERTICAL_RIGHT = 8,
-    COMMAND_READ_ENCODER_HORIZONTAL     = 9,
-    COMMAND_ENABLE_MANUAL_MODE          = 10,
-    COMMAND_ENABLE_AUTOMATIC_MODE       = 11,
+    COMMAND_MOTOR_HORIZONTAL_STOP       = 6,
+    COMMAND_MOTOR_CHANGE_SPEED          = 7,
+    COMMAND_MOTOR_ADAPT_UP              = 8,
+    COMMAND_MOTOR_ADAPT_DOWN            = 9,
+    COMMAND_MOTOR_ADAPT_STOP            = 10,
+};
+
+enum MODES
+{
+    MODE_RESERVED           = 0,
+    MODE_MANUAL_CONTROL     = 1,
+    MODE_POSITION_CONTROL   = 2,
+    MODE_RESET              = 3,
+    MODE_CHANGE_PARAMS      = 4,
 };
 
 /* FUNCTIONS PROTOTYPES */
-void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_transmit);
+void serial_data_transmit(UART_HandleTypeDef * uart_channel, uint32_t * data_to_transmit, size_t size);
 void serial_data_parser(SerialDataIn * serial_data_in);
+void serial_build_message(uint8_t motor_id, uint8_t status_motor, uint8_t status_movement_motor, uint32_t position, SerialDataOut * serial_data_out);
 
 #endif /* _SERIAL_COM_H_ */

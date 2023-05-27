@@ -18,7 +18,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "adc.h"
 #include "dma.h"
 #include "tim.h"
 #include "usart.h"
@@ -62,7 +61,8 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 uint8_t rx_buffer[10];
-uint32_t tx_buffer[10];
+uint32_t tx_buffer[1];
+
 /**
  * @brief
  * Callback function called when receiving data from the GUI
@@ -103,8 +103,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_ADC3_Init();
-  MX_TIM1_Init();
   MX_TIM4_Init();
   MX_TIM8_Init();
   MX_TIM23_Init();
@@ -113,21 +111,34 @@ int main(void)
   MX_USART3_UART_Init();
   MX_USB_OTG_HS_USB_Init();
   MX_TIM2_Init();
-
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
+
   /* TIMERS */
   /* Start the timer for Encoder 1 */
-  HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
+
+  /* Start the timer for Encoder 2 */
+  HAL_TIM_Encoder_Start(&htim23, TIM_CHANNEL_ALL);
 
   /* DMA */
   HAL_UART_Receive_DMA(&huart3, rx_buffer, 4);
 
   /* STRUCTURES */
   SerialDataIn serial_data_in = {
-    .buffer   = rx_buffer,
-    .id       = 0u,
-    .command  = 0u,
-    .data     = 0u
+    .buffer           = rx_buffer,
+    .mode             = 0u,
+    .id               = 0u,
+    .command          = 0u,
+    .previous_command = 0u,
+    .data             = 0u,
+  };
+
+  SerialDataOut serial_data_out = {
+    .buffer           = tx_buffer,
+    .message_to_send  = 0u,
+    .uart_channel     = &huart3,
+    .size_buffer      = sizeof(tx_buffer),
   };
 
   Encoder encoder_array[NUMBER_OF_ENCODERS];
@@ -136,31 +147,18 @@ int main(void)
   Motor motor_array[NUMBER_MOTOR];
   motor_init(motor_array, encoder_array);
 
-  /* Global flags */
-  bool g_is_stop_activated = true;
   /* USER CODE END 2 */
 
+  /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    /* Read and dispatch commands coming from the GUI */
+    /* Read commands coming from the GUI */
     serial_data_parser(&serial_data_in);
-    //serial_data_dispatch(&serial_data_in, &motor_vertical_left);
 
-    TIM2->ARR = 4*28000;
-    TIM2->CCR1 = (TIM2->ARR)/2;
-    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    /* Dispatch commands to the motors */
+    motor_control_dispatch(&serial_data_in, &serial_data_out, motor_array);
 
-    /* Transmit new encoder values to GUI */
-    int32_t encoder_1_value = encoder_read_value(motor_array[INDEX_MOTOR_VERTICAL_LEFT].motor_encoder) & 0x0000FFFF;
-
-    /* For now, choose between one of these 2 lines for manual control or position control */
-    // motor_control_manual(serial_data_in.command, &g_is_stop_activated, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
-    motor_control(10.0f, 0.1f, 2*28000, &motor_array[INDEX_MOTOR_VERTICAL_LEFT]);
-
-    tx_buffer[0] = encoder_1_value;
-    
-    serial_data_transmit(&huart3, tx_buffer);
     HAL_Delay(100);
 
     /* USER CODE END WHILE */
@@ -188,10 +186,6 @@ void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
 
   while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VOSRDY)) {}
-
-  /** Macro to configure the PLL clock source
-  */
-  __HAL_RCC_PLL_PLLSOURCE_CONFIG(RCC_PLLSOURCE_HSE);
 
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
